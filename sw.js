@@ -1,8 +1,8 @@
 const VERSION = 'v18';
-const SHELL = `turno-shell-${VERSION}`;
-const API = `turno-cima-${VERSION}`;
-const OCR = 'turno-ocr-assets-v1';
-const PREFIX = 'turno-';
+const SHELL = `NurseFlowV2-shell-${VERSION}`;
+const API = `NurseFlowV2-cima-${VERSION}`;
+const OCR = 'NurseFlowV2-ocr-assets-v1';
+const PREFIX = 'NurseFlowV2-';
 const BASE = new URL('./', self.location.href);
 const FILES = ['index.html','manifest.json','styles.css','app.js','db.js','backup-ui.js','backup-data.js','planner-ui.js','holidays-ui.js','holidays-valencia.json','planner-data.js','ucv-catalog.js','calculators.js','clinical-calculators.js','tool-catalog.js','tool-help.js','tools-ui.js','cima.js','api.js','icd.js','case-data.js','cases-ui.js','clinical-reference.js','ocr-ui.js','redaction.js','icons/icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png'];
 const SHELL_URLS = new Set(FILES.map(file => new URL(file, BASE).href));
@@ -30,8 +30,8 @@ async function cima(request) {
   // MedlinePlus recommends a 12–24 h cache to limit upstream load.
   if (new URL(request.url).pathname === '/medline/search') {
     const stored = await cache.match(request);
-    if (stored && Date.now() - Date.parse(stored.headers.get('X-Turno-Fetched-At')) < 12 * 60 * 60 * 1000) {
-      const headers = new Headers(stored.headers); headers.set('X-Turno-Offline', '1');
+    if (stored && Date.now() - Date.parse(stored.headers.get('X-NurseFlowV2-Fetched-At')) < 12 * 60 * 60 * 1000) {
+      const headers = new Headers(stored.headers); headers.set('X-NurseFlowV2-Offline', '1');
       return new Response(await stored.arrayBuffer(), { status: stored.status, headers });
     }
   }
@@ -43,7 +43,7 @@ async function cima(request) {
     // Preserve explicit errors; never replace 403/429/502 with a stale successful response.
     if (!response.ok) return response;
     const headers = new Headers(response.headers);
-    headers.set('X-Turno-Fetched-At', new Date().toISOString());
+    headers.set('X-NurseFlowV2-Fetched-At', new Date().toISOString());
     const readable = new Response(await response.clone().arrayBuffer(), { status: response.status, headers });
     // A storage failure must not prevent displaying a successful online response.
     try { await cache.put(request, readable.clone()); await trim(cache); } catch {}
@@ -52,7 +52,7 @@ async function cima(request) {
     const cached = await cache.match(request);
     if (cached) {
       const headers = new Headers(cached.headers);
-      headers.set('X-Turno-Offline', '1');
+      headers.set('X-NurseFlowV2-Offline', '1');
       return new Response(await cached.arrayBuffer(), { status: cached.status, headers });
     }
     return new Response(JSON.stringify({ error: 'No hay una copia local de esta consulta.' }), { status: 503, headers: { 'Content-Type': 'application/json' } });

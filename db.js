@@ -3,7 +3,7 @@ import { validSymptoms, validDiagnosis, matchesCase, validClinicalReference } fr
 import { validImages } from './redaction.js';
 import { validPlanner } from './planner-data.js';
 import { isNurseFlow, convertNurseFlow, validSetting, validArchive } from './backup-data.js';
-const NAME = 'turno-nursing';
+const NAME = 'NurseFlowV2-nursing';
 const VERSION = 3;
 let connection;
 
@@ -146,7 +146,7 @@ export async function exportBackup() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(['cases', 'favorites', 'planner', 'settings', 'imports'], 'readonly');
-    const result = { format: 'turno-backup', version: 3, exportedAt: new Date().toISOString() };
+    const result = { format: 'NurseFlowV2-backup', version: 3, exportedAt: new Date().toISOString() };
     for (const name of ['cases', 'favorites', 'planner', 'settings', 'imports']) tx.objectStore(name).getAll().onsuccess = event => { result[name] = event.target.result; };
     tx.oncomplete = () => resolve(result);
     tx.onabort = () => reject(tx.error);
@@ -157,7 +157,7 @@ export async function exportBackup() {
 export async function prepareImport(input) {
   const nurseFlow = isNurseFlow(input);
   const backup = nurseFlow ? await convertNurseFlow(input) : input;
-  if (!backup || backup.format !== 'turno-backup' || ![1,2,3].includes(backup.version) || !Array.isArray(backup.cases) || !Array.isArray(backup.favorites) || backup.cases.length > 5000 || backup.favorites.length > 5000 || (backup.version>=2 && (!Array.isArray(backup.planner) || backup.planner.length>20000)) || (backup.version===3 && (!Array.isArray(backup.settings) || backup.settings.length>100 || !Array.isArray(backup.imports) || backup.imports.length>100))) throw new Error('Copia incompatible o demasiado grande.');
+  if (!backup || backup.format !== 'NurseFlowV2-backup' || ![1,2,3].includes(backup.version) || !Array.isArray(backup.cases) || !Array.isArray(backup.favorites) || backup.cases.length > 5000 || backup.favorites.length > 5000 || (backup.version>=2 && (!Array.isArray(backup.planner) || backup.planner.length>20000)) || (backup.version===3 && (!Array.isArray(backup.settings) || backup.settings.length>100 || !Array.isArray(backup.imports) || backup.imports.length>100))) throw new Error('Copia incompatible o demasiado grande.');
   const cases = backup.cases.map(validCase);
   const favorites = backup.favorites.map(validFavorite);
   const planner = (backup.planner || []).map(validPlanner);
@@ -165,7 +165,7 @@ export async function prepareImport(input) {
   const imports = (backup.imports || []).map(validArchive);
   if (cases.some(row => !row.id)) throw new Error('Identificador vacío.');
   for (const [rows,key] of [[cases,'id'],[favorites,'nregistro'],[planner,'id'],[settings,'key'],[imports,'id']]) if (new Set(rows.map(row=>row[key])).size!==rows.length) throw new Error('La copia contiene identificadores duplicados.');
-  return {format:'turno-backup',version:3,cases,favorites,planner,settings,imports,report:nurseFlow ? backup.report : {source:'Copia Turno',warnings:[],kept:[]}};
+  return {format:'NurseFlowV2-backup',version:3,cases,favorites,planner,settings,imports,report:nurseFlow ? backup.report : {source:'Copia NurseFlowV2',warnings:[],kept:[]}};
 }
 export async function importBackup(input) {
   const {cases,favorites,planner,settings,imports} = await prepareImport(input);

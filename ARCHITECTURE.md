@@ -1,4 +1,4 @@
-# Turno — Arquitectura y primer sprint
+# NurseFlowV2 — Arquitectura y primer sprint
 
 Fecha: 13 de octubre de 2026. Estado: versión 0.3, prototipo local sin publicar.
 
@@ -59,7 +59,7 @@ no forman parte de la aplicación ni del despliegue.
 
 ## 3. Datos en IndexedDB
 
-Base: `turno-nursing`, versión 1. Envoltura nativa pequeña; ninguna dependencia CDN.
+Base: `NurseFlowV2-nursing`, versión 1. Envoltura nativa pequeña; ninguna dependencia CDN.
 
 | Store | Clave | Índices | Campos |
 | --- | --- | --- | --- |
@@ -77,7 +77,7 @@ no al completar una petición aislada. Editar un caso conserva `id` y `createdAt
 lectura y actualización se realizan en una misma transacción. Los errores no
 producen un estado de «Guardado» falso.
 
-Importación: JSON con `format: turno-backup`, `version: 1`, casos y favoritos.
+Importación: JSON con `format: NurseFlowV2-backup`, `version: 1`, casos y favoritos.
 Valida antes de escribir, máximo 10 MB en la interfaz y 5.000 registros por store.
 Importa de forma atómica sin sustituir IDs existentes; las copias no incluyen caché
 temporal ni preferencias. No hay cifrado de aplicación: las copias contienen texto
@@ -116,8 +116,8 @@ local exacta de la URL, si existe. Sin copia devuelve 503 y mensaje explícito.
 Solo almacena respuestas correctas y legibles, nunca respuestas opacas. Una
 petición usa `Accept: application/json`. La caché temporal tiene un máximo de 60
 consultas, con eliminación por orden de inserción. Un fallo de almacenamiento no
-bloquea una respuesta online correcta. Conserva `X-Turno-Fetched-At` y añade
-`X-Turno-Offline: 1` al recurrir a caché, incluso con red disponible y CIMA caída.
+bloquea una respuesta online correcta. Conserva `X-NurseFlowV2-Fetched-At` y añade
+`X-NurseFlowV2-Offline: 1` al recurrir a caché, incluso con red disponible y CIMA caída.
 La fecha indica descarga, no fecha de revisión clínica.
 
 La caché temporal no es una biblioteca garantizada. Los PDFs/HTML oficiales abiertos
@@ -287,7 +287,7 @@ Los términos del buscador de diagnóstico son consultas externas explícitas. N
 
 
 ### OCR 0.6
-`ocr-ui.js` gestiona el canvas, el Worker local Tesseract y el estado de revisión; `redaction.js` obtiene líneas y cajas, propone zonas y valida imágenes persistibles. El Worker OCR se termina después de cada análisis. Caja negra incorporada a píxeles antes de `canvas.toDataURL(image/jpeg)`. IndexedDB v1 añade `cases.images` opcional: lista `{dataUrl,reviewed:true}`; no almacena el original, EXIF ni transcripción. CSP permite `worker-src self` y compilación WASM mediante `wasm-unsafe-eval`; no se permite JS eval general ni motores remotos. Recursos vendor se cachean en `turno-ocr-assets-v1`, conservado entre versiones del App Shell. Dependencias npm verificadas con SHA512 del registro; modelo español versionado y SHA256 en vendor/ocr/VERSIONS.txt.
+`ocr-ui.js` gestiona el canvas, el Worker local Tesseract y el estado de revisión; `redaction.js` obtiene líneas y cajas, propone zonas y valida imágenes persistibles. El Worker OCR se termina después de cada análisis. Caja negra incorporada a píxeles antes de `canvas.toDataURL(image/jpeg)`. IndexedDB v1 añade `cases.images` opcional: lista `{dataUrl,reviewed:true}`; no almacena el original, EXIF ni transcripción. CSP permite `worker-src self` y compilación WASM mediante `wasm-unsafe-eval`; no se permite JS eval general ni motores remotos. Recursos vendor se cachean en `NurseFlowV2-ocr-assets-v1`, conservado entre versiones del App Shell. Dependencias npm verificadas con SHA512 del registro; modelo español versionado y SHA256 en vendor/ocr/VERSIONS.txt.
 
 ### Agenda y estudios 0.7
 

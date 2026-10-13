@@ -7,14 +7,14 @@
   <meta name="theme-color" content="#101114" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Turno">
+  <meta name="apple-mobile-web-app-title" content="NurseFlowV2">
   <meta name="description" content="Medicamentos, cálculos y aprendizaje clínico. Una herramienta de bolsillo para enfermería.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://nurseflow-api.carlosb-n.workers.dev; object-src 'none'; base-uri 'self'; form-action 'self'">
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
-  <title>Turno · Enfermería</title>
+  <title>NurseFlowV2 · Enfermería</title>
 </head>
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
@@ -35,7 +35,7 @@
     <symbol id="i-foot" viewBox="0 0 24 24"><ellipse cx="7" cy="8" rx="3" ry="6"/><ellipse cx="17" cy="12" rx="3" ry="6"/><path d="M5 14v5a2 2 0 0 0 4 0v-5m6 4v2a2 2 0 0 0 4 0v-2"/></symbol>
   </svg>
   <div class="app-shell">
-    <header class="topbar"><a class="brand" href="#tools"><span class="brand-mark">+</span> Turno<span class="brand-caption">ENFERMERÍA</span></a><span id="connection" class="badge">Comprobando conexión</span></header>
+    <header class="topbar"><a class="brand" href="#tools"><span class="brand-mark">+</span> NurseFlowV2<span class="brand-caption">ENFERMERÍA</span></a><span id="connection" class="badge">Comprobando conexión</span></header>
     <main id="main" tabindex="-1">
       <section id="tools" class="view" aria-labelledby="tools-title">
         <p class="eyebrow">CONSULTA · EN TU BOLSILLO</p><h1 id="tools-title">Calculadoras y escalas</h1>
@@ -92,7 +92,7 @@
         <p class="eyebrow">EN ESTE DISPOSITIVO</p><h1 id="data-title">Importar y exportar</h1><p class="intro">Recupera tu copia o llévate tus datos. Todo se procesa localmente.</p>
         <article class="panel"><h2>Copia de seguridad</h2><p>Incluye casos, imágenes revisadas, favoritos, agenda, estudios, pendientes y ajustes. Borrar los datos del navegador puede eliminarlos.</p>
           <div class="actions"><button id="export-data" class="primary">Exportar datos</button><label class="file-button">Elegir archivo para importar<input id="import-data" type="file" accept="application/json,.json"></label></div>
-          <p class="field-help">Admite copias Turno y el formato anterior de NurseFlow, incluido nurseflow-backup-auto.json. Máximo 30 MB. Importar añade datos y conserva los registros existentes.</p>
+          <p class="field-help">Admite copias NurseFlowV2 y el formato anterior de NurseFlow, incluido nurseflow-backup-auto.json. Máximo 30 MB. Importar añade datos y conserva los registros existentes.</p>
           <p id="storage-status" class="muted" role="status"></p>
           <section id="import-preview" class="clinical-panel" hidden><h3>Resumen de importación</h3><div id="import-summary"></div><div class="actions"><button id="import-confirm" type="button" class="primary">Importar datos</button><button id="import-cancel" type="button" class="secondary">Cancelar importación</button></div></section>
         </article>
@@ -100,19 +100,19 @@
         <article class="panel"><h2>Conservar los datos</h2><p>No hay sincronización entre dispositivos. Comprueba que tus copias se descargan y guárdalas en un lugar privado.</p><button id="persist-data" class="secondary">Solicitar almacenamiento persistente</button></article>
       </section>
       <section id="agenda" class="view" hidden aria-labelledby="agenda-title">
-        <p class="eyebrow">TU SEMANA · OFFLINE</p><h1 id="agenda-title">Agenda</h1><p class="intro">Clases, turnos, prácticas y entregas. Un horario común para tu día a día.</p>
+        <p class="eyebrow">TU SEMANA · OFFLINE</p><h1 id="agenda-title">Agenda</h1><p class="intro">Clases, NurseFlowV2s, prácticas y entregas. Un horario común para tu día a día.</p>
         <div class="actions"><button id="plan-new" class="primary">+ Añadir horario</button><button id="agenda-export" class="secondary">Exportar calendario</button><a href="#studies">Mis estudios →</a><a href="#holidays">Festivos y días sin clase →</a></div>
         <form id="plan-form" class="panel" hidden>
           <h2>Horario</h2><input id="plan-id" type="hidden">
-          <div class="form-grid"><div><label for="plan-kind">Tipo</label><select id="plan-kind"><option>Clase</option><option value="rotation">Prácticas</option><option>Turno</option><option>Examen</option><option>Entrega</option><option>Tutoría</option><option>Otro</option></select></div><div><label for="plan-subject">Asignatura · opcional</label><select id="plan-subject"></select></div></div>
-          <label for="plan-title">Nombre</label><input id="plan-title" required maxlength="500" placeholder="Asignatura, Practicum o turno">
+          <div class="form-grid"><div><label for="plan-kind">Tipo</label><select id="plan-kind"><option>Clase</option><option value="rotation">Prácticas</option><option>NurseFlowV2</option><option>Examen</option><option>Entrega</option><option>Tutoría</option><option>Otro</option></select></div><div><label for="plan-subject">Asignatura · opcional</label><select id="plan-subject"></select></div></div>
+          <label for="plan-title">Nombre</label><input id="plan-title" required maxlength="500" placeholder="Asignatura, Practicum o NurseFlowV2">
           <div class="form-grid"><div><label for="plan-start-date">Desde</label><input id="plan-start-date" type="date" required></div><div><label for="plan-end-date">Hasta · si se repite</label><input id="plan-end-date" type="date"></div><div><label for="plan-start">Hora de inicio</label><input id="plan-start" type="time" required></div><div><label for="plan-end">Hora de fin</label><input id="plan-end" type="time" required></div></div>
           <p class="field-help">Esta versión permite horarios que empiezan y terminan en el mismo día.</p>
           <label class="confirmation-choice"><input id="plan-repeat" type="checkbox">Repetir durante el periodo</label>
           <fieldset class="symptom-fieldset"><legend>Días de la semana</legend><div class="planner-weekdays">
             <label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="1" checked>Lun</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="2" checked>Mar</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="3" checked>Mié</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="4" checked>Jue</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="5" checked>Vie</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="6">Sáb</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="0">Dom</label>
           </div></fieldset>
-          <p class="privacy-note">En prácticas proponemos 15:00–22:00 de lunes a viernes. Los festivos se excluyen automáticamente de las clases, pero no de prácticas o turnos: comprueba esos horarios con el centro.</p>
+          <p class="privacy-note">En prácticas proponemos 15:00–22:00 de lunes a viernes. Los festivos se excluyen automáticamente de las clases, pero no de prácticas o NurseFlowV2s: comprueba esos horarios con el centro.</p>
           <label class="confirmation-choice"><input id="plan-ignore-closures" type="checkbox">Esta clase también se imparte en festivos o días sin clase</label><p class="field-help">Solo afecta al tipo Clase. Las fechas excluidas manualmente abajo se siguen respetando.</p>
           <label for="plan-excluded">Días sin actividad · opcional</label><input id="plan-excluded" placeholder="2026-12-25, 2027-01-01" maxlength="2400"><p class="field-help">Fechas separadas por comas, en formato AAAA-MM-DD. Sirve para festivos y otras excepciones.</p>
           <details><summary>Centro y tutor · opcional</summary><label for="plan-place">Centro o aula</label><input id="plan-place" maxlength="500"><label for="plan-tutor">Tutor o contacto de referencia</label><input id="plan-tutor" maxlength="500"></details>
@@ -124,7 +124,7 @@
       </section>
       <section id="holidays" class="view" hidden aria-labelledby="holidays-title">
         <p class="eyebrow">VALENCIA · 2026 Y 2027</p><h1 id="holidays-title">Festivos y días sin clase</h1><p class="intro">Los festivos oficiales de Valencia ya están cargados. Las clases se omiten en esos días, sin borrar su horario recurrente.</p><p><a href="#agenda">Volver a la agenda →</a></p>
-        <article class="panel"><h2>Calendario de Valencia</h2><p>Incluye los festivos nacionales, autonómicos y locales publicados para 2026 y 2027. Se guardan en este dispositivo y en tus copias de seguridad. Las prácticas, turnos, exámenes y tutorías mantienen su horario.</p><p class="field-help">Desmarca una fecha para dejar de aplicarla a las clases. Esto no modifica las excepciones que ya hayas escrito dentro de un horario. Para otros años o localidades, añade fechas comprobadas; no se extrapolan festivos.</p><details><summary>Consultar y ajustar días sin clase</summary><div id="holiday-list"></div></details></article>
+        <article class="panel"><h2>Calendario de Valencia</h2><p>Incluye los festivos nacionales, autonómicos y locales publicados para 2026 y 2027. Se guardan en este dispositivo y en tus copias de seguridad. Las prácticas, NurseFlowV2s, exámenes y tutorías mantienen su horario.</p><p class="field-help">Desmarca una fecha para dejar de aplicarla a las clases. Esto no modifica las excepciones que ya hayas escrito dentro de un horario. Para otros años o localidades, añade fechas comprobadas; no se extrapolan festivos.</p><details><summary>Consultar y ajustar días sin clase</summary><div id="holiday-list"></div></details></article>
         <article class="panel"><h2>Vacaciones y días propios de la UCV</h2><p class="field-help">Navidad, Pascua, Fallas o días del centro pueden abarcar más que los festivos oficiales. Comprueba las fechas de tu grado y campus en el <a href="https://www.ucv.es/Portals/0/documentos/calendario/2026/UCV%20CALENDARIO%20ACADEMICO%20A4%202026-27.pdf?ver=HS9USqNsSttDv3S2_xZ8gw%3D%3D" target="_blank" rel="noopener noreferrer">calendario académico UCV 2026–2027 ↗</a> y añade el periodo una sola vez para todas las clases.</p>
           <form id="holiday-form"><label for="holiday-title">Nombre</label><input id="holiday-title" required maxlength="500" placeholder="Por ejemplo, vacaciones de Navidad"><div class="form-grid"><div><label for="holiday-from">Primer día sin clase</label><input id="holiday-from" type="date" required></div><div><label for="holiday-to">Último día sin clase · opcional</label><input id="holiday-to" type="date"></div></div><label for="holiday-source">Fuente · opcional</label><input id="holiday-source" type="url" maxlength="2000" placeholder="https://…"><div class="actions"><button type="submit" class="primary">Añadir días sin clase</button></div></form><p id="holiday-status" role="status" class="field-help"></p>
         </article>

@@ -58,8 +58,8 @@ function utcTime(day,time) {
 }
 export function calendarFile(events, closures=[]) {
   const escape=value=>String(value).replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
-  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Turno//Agenda personal//ES'];
-  for(const event of events)for(const row of occurrences(event,undefined,undefined,closures))lines.push('BEGIN:VEVENT',`UID:${escape(event.id)}-${row.date}@turno.local`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}`,`DTSTART:${utcTime(row.date,event.start)}`,`DTEND:${utcTime(row.date,event.end)}`,`SUMMARY:${escape(event.title+(event.confirmed?'':' (provisional)'))}`,`LOCATION:${escape(event.place)}`,'END:VEVENT');
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//NurseFlowV2//Agenda personal//ES'];
+  for(const event of events)for(const row of occurrences(event,undefined,undefined,closures))lines.push('BEGIN:VEVENT',`UID:${escape(event.id)}-${row.date}@NurseFlowV2.local`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}`,`DTSTART:${utcTime(row.date,event.start)}`,`DTEND:${utcTime(row.date,event.end)}`,`SUMMARY:${escape(event.title+(event.confirmed?'':' (provisional)'))}`,`LOCATION:${escape(event.place)}`,'END:VEVENT');
   lines.push('END:VCALENDAR');
   return lines.map(line=>{let out='',chunk='',size=0;for(const character of line){const n=new TextEncoder().encode(character).length;if(size+n>73){out+=chunk+'\r\n ';chunk='';size=1;}chunk+=character;size+=n;}return out+chunk;}).join('\r\n')+'\r\n';
 }
