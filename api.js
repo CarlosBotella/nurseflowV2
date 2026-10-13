@@ -13,7 +13,7 @@ export async function requestReference(path, params = {}, signal) {
     let data;
     try { data = await response.json(); } catch { throw new Error('El servicio no ha devuelto una respuesta válida.'); }
     if (!response.ok) throw new Error(data.error || `No se pudo consultar el servicio (${response.status}).`);
-    return { data, offline: response.headers.get('X-Turno-Offline') === '1', fetchedAt: response.headers.get('X-Turno-Fetched-At') || new Date().toISOString() };
+    return { data, offline: response.headers.get('X-NurseFlowV2-Offline') === '1', fetchedAt: response.headers.get('X-NurseFlowV2-Fetched-At') || new Date().toISOString() };
   } catch (error) {
     if (error.name === 'AbortError') throw error;
     if (error instanceof TypeError) throw new Error('No se pudo conectar con la API. Revisa la conexión y el origen permitido del Worker.');

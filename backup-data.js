@@ -47,7 +47,7 @@ export async function convertNurseFlow(value){
  if(array(value,'meds').length!==favorites.length)kept.push('Medicamentos sin favorito compatible');
  if(value.exceptions.length)warnings.push(`${value.exceptions.length} excepciones conservadas; los festivos se aplican a las clases importadas. Otras rotaciones y horarios existentes no se modifican.`);
  if(main.hasPracticum)warnings.push('La configuración de prácticas se conserva en el original. Revisa días y fechas antes de crear su rotación.');
- return {format:'turno-backup',version:3,cases,favorites,planner,settings,imports:[{id:hash,format:'nurseflow',source}],report:{source:'NurseFlow anterior',warnings,kept:[...new Set(kept)],subjects:subjects.length,classes:value.schedule.length}};
+ return {format:'NurseFlowV2-backup',version:3,cases,favorites,planner,settings,imports:[{id:hash,format:'nurseflow',source}],report:{source:'NurseFlow anterior',warnings,kept:[...new Set(kept)],subjects:subjects.length,classes:value.schedule.length}};
 }
 export function validSetting(row){
  if(!row||typeof row.key!=='string')throw new Error('Ajuste inválido.');

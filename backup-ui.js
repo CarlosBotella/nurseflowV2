@@ -13,7 +13,7 @@ export function initBackup({announce,onImported}){
    const button=el('button','Descargar original conservado','secondary');button.type='button';button.addEventListener('click',()=>download(source,'nurseflow-original-conservado.json'));item.append(button);list.append(item);
   }
  }
- $('export-data').addEventListener('click',async()=>{if(busy)return;busy=true;$('export-data').disabled=true;try{download(await db.exportBackup(),`turno-copia-${new Date().toISOString().slice(0,10)}.json`);status('Copia preparada: casos, agenda, matrícula, pendientes, favoritos, ajustes y originales conservados. Comprueba que se haya descargado.');}catch(error){fail(error);}finally{busy=false;$('export-data').disabled=false;}});
+ $('export-data').addEventListener('click',async()=>{if(busy)return;busy=true;$('export-data').disabled=true;try{download(await db.exportBackup(),`NurseFlowV2-copia-${new Date().toISOString().slice(0,10)}.json`);status('Copia preparada: casos, agenda, matrícula, pendientes, favoritos, ajustes y originales conservados. Comprueba que se haya descargado.');}catch(error){fail(error);}finally{busy=false;$('export-data').disabled=false;}});
  $('import-data').addEventListener('change',async event=>{
   const file=event.target.files[0],version=++selection;pending=null;$('import-preview').hidden=true;$('import-summary').replaceChildren();
   try{if(!file)return;if(file.size>30*1024*1024)throw new Error('Máximo 30 MB por copia.');status('Revisando copia…');let data;try{data=JSON.parse((await file.text()).replace(/^\uFEFF/,''));}catch{throw new Error('El archivo no contiene JSON válido. Selecciona una exportación .json.');}

@@ -1,4 +1,4 @@
-# Calculadoras y escalas — Turno 0.3
+# Calculadoras y escalas — NurseFlowV2 0.3
 
 40 herramientas locales y 8 referencias externas. Fuentes consultadas el 13/10/2026. Prototipo pendiente de revisión y validación clínica independiente.
 

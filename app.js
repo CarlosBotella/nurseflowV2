@@ -14,7 +14,7 @@ const el = (tag, content, className) => { const node = document.createElement(ta
 const button = (label, action, className = 'secondary') => { const node = el('button', label, className); node.type = 'button'; node.addEventListener('click', () => run(action)); return node; };
 let dirty = false;
 window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
-window.addEventListener('db-blocked', () => announce('Cierra otras pestañas de Turno para actualizar el almacenamiento.'));
+window.addEventListener('db-blocked', () => announce('Cierra otras pestañas de NurseFlowV2 para actualizar el almacenamiento.'));
 
 function navigate() {
   const id = location.hash.slice(1);
@@ -163,7 +163,7 @@ if ('serviceWorker' in navigator) {
     $('offline-ready').textContent = 'Aplicación preparada para uso offline. CIMA y CIE-11: solo consultas almacenadas temporalmente.';
     registration.addEventListener('updatefound', () => {
       const worker = registration.installing;
-      worker?.addEventListener('statechange', () => { if (worker.state === 'installed' && navigator.serviceWorker.controller) announce('Nueva versión preparada. Guarda tus cambios y cierra todas las pestañas de Turno para aplicarla.'); });
+      worker?.addEventListener('statechange', () => { if (worker.state === 'installed' && navigator.serviceWorker.controller) announce('Nueva versión preparada. Guarda tus cambios y cierra todas las pestañas de NurseFlowV2 para aplicarla.'); });
     });
   }).catch(() => { $('offline-ready').textContent = 'No se ha podido preparar el uso offline. Abre la app mediante HTTPS o localhost.'; });
 } else $('offline-ready').textContent = 'Este navegador no admite el uso offline de la aplicación.';

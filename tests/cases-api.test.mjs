@@ -31,7 +31,7 @@ test('reference client uses the configured Worker without admin secrets', async 
     assert.equal(url.origin, 'https://nurseflow-api.carlosb-n.workers.dev');
     assert.equal(url.searchParams.get('q'), 'neumonía');
     assert.equal(options.headers['X-Admin-Secret'], undefined);
-    return new Response(JSON.stringify({ destinationEntities: [] }), { headers: { 'X-Turno-Offline': '1', 'X-Turno-Fetched-At': '2026-10-13T00:00:00Z' } });
+    return new Response(JSON.stringify({ destinationEntities: [] }), { headers: { 'X-NurseFlowV2-Offline': '1', 'X-NurseFlowV2-Fetched-At': '2026-10-13T00:00:00Z' } });
   };
   try {
     const result = await requestReference('icd/search', { q: 'neumonía' });

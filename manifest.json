@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Turno · Herramientas de enfermería",
-  "short_name": "Turno",
+  "name": "NurseFlowV2 · Herramientas de enfermería",
+  "short_name": "NurseFlowV2",
   "description": "Consulta de medicamentos, cálculos y casos clínicos offline.",
   "lang": "es",
   "start_url": "./",
