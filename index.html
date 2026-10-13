@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101114" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Turno">
+  <meta name="description" content="Medicamentos, cálculos y aprendizaje clínico. Una herramienta de bolsillo para enfermería.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://nurseflow-api.carlosb-n.workers.dev; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Turno · Enfermería</title>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <svg class="svg-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-tools" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8 7h8M8 11h2m4 0h2m-8 4h2m4 0h2m-8 3h2m4 0h2"/></symbol>
+    <symbol id="i-med" viewBox="0 0 24 24"><path d="M8 4a5.7 5.7 0 0 1 8 8l-4 4a5.7 5.7 0 0 1-8-8l4-4ZM7 7l8 8"/></symbol>
+    <symbol id="i-cases" viewBox="0 0 24 24"><path d="M7 4H5v17h14V4h-2M9 11h6m-6 4h6"/><rect x="8" y="2" width="8" height="5" rx="2"/></symbol>
+    <symbol id="i-saved" viewBox="0 0 24 24"><path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17l-6-4-6 4Z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20 4 12C-1 6 7 0 12 7c5-7 13-1 8 5l-8 8Z"/></symbol>
+    <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 2c-2 5-7 9-7 13a7 7 0 0 0 14 0c0-4-5-8-7-13Z"/></symbol>
+    <symbol id="i-waves" viewBox="0 0 24 24"><path d="M2 6c3 4 5-4 8 0s5-4 8 0 3 0 4 0M2 12c3 4 5-4 8 0s5-4 8 0 3 0 4 0M2 18c3 4 5-4 8 0s5-4 8 0 3 0 4 0"/></symbol>
+    <symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 4v16M12 5C8-1 4 3 5 6c-4 0-5 5-2 7-3 4 1 8 4 6 1 4 5 1 5 0m0-14c4-6 8-2 7 1 4 0 5 5 2 7 3 4-1 8-4 6-1 4-5 1-5 0M5 6l2 3m12-3-2 3M3 13h4m14 0h-4"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h12a3 3 0 1 0-3-3M2 12h17a3 3 0 1 1-3 3M4 17h7a2 2 0 1 1-2 2"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m14 2-9 12h6l-1 8 9-12h-6l1-8Z"/></symbol>
+    <symbol id="i-bandage" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M8 6v12m8-12v12m-5-9h2m-2 3h2m-2 3h2"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24"><path d="M12 7c-2-3-9-2-9 4 0 6 4 11 9 8 5 3 9-2 9-8 0-6-7-7-9-4Zm0 0V3m0 0c2-2 4-1 4-1"/></symbol>
+    <symbol id="i-baby" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M10 5c-1-4 4-4 4-1 0 2-2 2-2 1M8 12h1m6 0h1m-7 4c2 2 4 2 6 0"/></symbol>
+    <symbol id="i-foot" viewBox="0 0 24 24"><ellipse cx="7" cy="8" rx="3" ry="6"/><ellipse cx="17" cy="12" rx="3" ry="6"/><path d="M5 14v5a2 2 0 0 0 4 0v-5m6 4v2a2 2 0 0 0 4 0v-2"/></symbol>
+  </svg>
+  <div class="app-shell">
+    <header class="topbar"><a class="brand" href="#tools"><span class="brand-mark">+</span> Turno<span class="brand-caption">ENFERMERÍA</span></a><span id="connection" class="badge">Comprobando conexión</span></header>
+    <main id="main" tabindex="-1">
+      <section id="tools" class="view" aria-labelledby="tools-title">
+        <p class="eyebrow">CONSULTA · EN TU BOLSILLO</p><h1 id="tools-title">Calculadoras y escalas</h1>
+        <p class="intro">Encuentra tu herramienta, comprueba los datos y consulta su fuente.</p>
+        <div id="tool-library">
+          <div class="tool-search"><label class="sr-only" for="tool-query">Buscar calculadora o escala</label><input id="tool-query" type="search" placeholder="Buscar calculadora o escala…" autocomplete="off"><button id="tool-only-favorites" class="secondary" aria-pressed="false">☆ Favoritos</button></div>
+          <p class="eyebrow filter-caption">FILTRAR POR ESPECIALIDAD</p><div id="tool-specialties" class="specialty-chips" role="group" aria-label="Especialidades"></div>
+          <p id="tool-count" class="muted" role="status"></p><p id="tool-status" role="status"></p>
+          <div id="tool-groups"></div>
+          <p class="fine-print">Calculadoras sin conexión tras instalar la app. Las entradas marcadas como referencia externa abren el recurso completo y necesitan conexión.</p>
+        </div>
+        <article id="calculator" class="panel" hidden>
+          <div class="section-heading"><h2 id="calc-title" tabindex="-1">Infusión</h2><button id="close-calculator" class="quiet">Volver al catálogo</button></div>
+          <p id="calc-description" class="muted"></p>
+          <div id="calc-help" class="calculator-help"></div>
+          <form id="calc-form"><p class="fine-print">En los números, usa coma o punto decimal y escribe sin separadores de miles: por ejemplo, 1000 o 0,5.</p><div id="calc-fields" class="form-grid"></div><button class="primary" type="submit">Calcular</button></form>
+          <div id="calc-result" class="result" role="status" hidden></div>
+          <p id="calc-note" class="privacy-note"></p><p id="calc-formula" class="formula-preview"></p><p><a id="calc-source" target="_blank" rel="noopener noreferrer">Consultar fuente ↗</a></p><div id="calc-help-sources"></div><p id="calc-version" class="fine-print"></p>
+        </article>
+        <article class="feature-strip"><span class="feature-mark">↳</span><div><h2>Lo que aprendes, contigo.</h2><p>Guarda casos anonimizados y notas en este dispositivo.</p></div><a class="text-link" href="#cases">Crear un caso →</a></article>
+      </section>
+      <section id="medications" class="view" hidden aria-labelledby="med-title">
+        <p class="eyebrow">REFERENCIA OFICIAL · AEMPS</p><h1 id="med-title">Medicamentos</h1><p class="intro">Busca una presentación concreta. Revisa siempre concentración y vía.</p>
+        <form id="search-form" class="search-bar" role="search"><label class="sr-only" for="med-query">Nombre del medicamento o principio activo</label><input id="med-query" type="search" placeholder="Por ejemplo, paracetamol" autocomplete="off" maxlength="100"><button class="primary" type="submit">Buscar</button></form>
+        <p id="search-status" class="muted" role="status">Escribe al menos 3 caracteres para buscar.</p><div id="med-results" class="list"></div><button id="more-results" class="secondary" hidden>Ver más resultados</button>
+        <article id="med-detail" class="panel" hidden><div class="section-heading"><h2 id="detail-title"></h2><button id="close-detail" class="quiet">Cerrar</button></div><div id="detail-content"></div></article>
+      </section>
+      <section id="cases" class="view" hidden aria-labelledby="cases-title">
+        <p class="eyebrow">APRENDIZAJE PERSONAL · OFFLINE</p><h1 id="cases-title">Casos y notas</h1><p class="intro">Tu cuaderno clínico, guardado en este dispositivo.</p>
+        <p><a href="#data">Importar o exportar datos →</a></p>
+        <div class="section-heading"><h2>Tu cuaderno</h2><button id="new-case" class="primary">+ Nuevo caso</button></div>
+        <label class="sr-only" for="case-query">Buscar casos</label><input id="case-query" type="search" placeholder="Buscar por síntoma, diagnóstico o palabra clave">
+        <div id="case-list" class="list"></div>
+        <form id="case-form" class="panel" hidden><h2 id="case-form-title">Nuevo caso</h2><p class="privacy-note">Usa casos ficticios o anonimizados. Omite nombres, fechas exactas, habitaciones e identificadores. Revisa también el texto libre.</p><input id="case-id" type="hidden">
+          <label for="case-title">Título del caso <span class="muted">· obligatorio</span></label><input id="case-title" required maxlength="160" placeholder="Una frase para recordar el caso">
+          <fieldset class="symptom-fieldset"><legend>Diagnóstico CIE-11 <span class="muted">· opcional</span></legend><label for="diagnosis-query">Buscar diagnóstico conocido</label><div class="inline-input"><input id="diagnosis-query" type="search" maxlength="120" placeholder="Nombre del diagnóstico" aria-describedby="diagnosis-status"><button id="diagnosis-search" type="button" class="secondary">Buscar</button></div><p id="diagnosis-status" class="field-help" role="status"></p><div id="diagnosis-results" class="diagnosis-results"></div><div id="selected-diagnosis" class="selected-diagnosis"></div><label class="confirmation-choice"><input id="diagnosis-confirmed" type="checkbox" disabled>Diagnóstico confirmado en el caso</label><p class="fine-print">Por defecto, no confirmado. La app no verifica el diagnóstico ni calcula probabilidades a partir de síntomas.</p><div id="diagnosis-detail" class="document-content"></div></fieldset>
+          <fieldset class="symptom-fieldset"><legend>Síntomas observados <span class="muted">· opcional</span></legend><p class="field-help">Las opciones se obtienen del artículo asociado al diagnóstico. Marca solo lo que observaste; ninguna se selecciona automáticamente.</p><div id="symptom-options" class="symptom-options"></div><p id="symptom-count" class="fine-print" role="status"></p><label for="symptom-custom">Otro síntoma o hallazgo</label><div class="inline-input"><input id="symptom-custom" maxlength="100" placeholder="Añadir una etiqueta propia"><button id="symptom-add" type="button" class="secondary">Añadir</button></div></fieldset>
+          <section class="clinical-panel" aria-labelledby="clinical-title"><h3 id="clinical-title">Información del diagnóstico</h3><p class="field-help">Contenido de fuentes externas para consultar y estudiar. No rellena hechos del paciente ni prescribe cuidados.</p><p id="clinical-status" role="status" class="field-help"></p><div id="clinical-search-controls" hidden><label for="clinical-search-query">Buscar otro artículo en MedlinePlus</label><div class="inline-input"><input id="clinical-search-query" type="search" maxlength="120" placeholder="Nombre de la enfermedad"><button id="clinical-search" type="button" class="secondary">Buscar</button></div></div><div id="clinical-candidates" class="diagnosis-results"></div><div id="clinical-info"></div></section>
+          <section class="clinical-panel" aria-labelledby="images-title"><h3 id="images-title">Imágenes del caso</h3><p class="field-help">OCR local: la imagen no se envía a una API. Admite JPG, PNG y WebP. El OCR puede omitir datos, rostros y códigos; revisa toda la imagen.</p><label class="file-button">Elegir imagen<input id="case-image-input" type="file" accept="image/jpeg,image/png,image/webp"></label><p id="image-status" role="status" class="field-help"></p><div id="image-editor" hidden><div class="actions"><button id="image-analyze" type="button" class="secondary">Detectar texto (OCR)</button><button id="image-discard" type="button" class="quiet">Descartar imagen</button></div><label class="confirmation-choice"><input id="image-all-text" type="checkbox" checked>Proponer ocultar todo el texto con lectura fiable</label><p class="field-help">Desmarca para proponer solo posibles datos personales. Revisa las detecciones: puedes quitar cada bloque incorrecto. Las lecturas dudosas quedan sin marcar y pueden contener datos personales. Arrastra para tapar otras zonas. Los bloques negros se incorporan a los píxeles.</p><details><summary>Revisar detecciones OCR</summary><div id="image-detections"></div></details><canvas id="image-canvas" aria-label="Vista previa de la imagen; arrastra para ocultar zonas"></canvas><div class="actions"><button id="image-hide-top" type="button" class="secondary">Tapar cabecera</button><button id="image-hide-bottom" type="button" class="secondary">Tapar pie</button><button id="image-hide-all" type="button" class="secondary">Tapar toda la imagen</button><button id="image-undo" type="button" class="quiet">Deshacer última zona manual</button></div><label class="confirmation-choice"><input id="image-reviewed" type="checkbox">He revisado toda la imagen y ocultado los datos identificativos</label><button id="image-attach" type="button" class="primary">Adjuntar imagen revisada</button></div><div id="case-images" class="case-images"></div></section>
+          <label for="case-learning">Qué ocurrió o qué aprendiste <span class="muted">· opcional</span></label><textarea id="case-learning" rows="3" maxlength="30000" placeholder="Una nota breve es suficiente. Puedes completarla después."></textarea>
+          <details id="case-extra"><summary>Ampliar el caso · contexto, cuidados y etiquetas</summary><label for="case-context">Contexto general</label><textarea id="case-context" rows="2" maxlength="10000" placeholder="Información general anonimizada"></textarea><label for="case-assessment">Valoración, cuidados e intervenciones</label><textarea id="case-assessment" rows="3" maxlength="30000"></textarea><label for="case-tags">Etiquetas, separadas por comas</label><input id="case-tags" maxlength="300" placeholder="Prácticas, respiratorio, estudio"></details>
+          <div class="actions"><button class="primary" type="submit">Guardar caso</button><button id="cancel-case" class="secondary" type="button">Cancelar</button><span id="case-status" class="muted" role="status"></span></div>
+        </form>
+      </section>
+      <section id="saved" class="view" hidden aria-labelledby="saved-title">
+        <p class="eyebrow">A TU MANERA</p><h1 id="saved-title">Más</h1><p class="intro">Estudios, referencias y ajustes. Entra solo en lo que necesites.</p>
+        <article class="feature-strip"><div><h2>Mis estudios</h2><p>Asignaturas UCV, prácticas y pendientes, sin elegir un perfil.</p></div><a class="text-link" href="#studies">Abrir estudios →</a></article>
+        <h2>Medicamentos guardados</h2>
+        <div id="favorite-list" class="list"></div>
+        <article class="feature-strip"><div><h2>Mis datos</h2><p>Importa una copia de NurseFlow o exporta lo que tienes guardado.</p></div><a class="text-link" href="#data">Importar y exportar →</a></article>
+        <article class="panel"><h2>Apariencia</h2><label for="theme">Modo de color</label><select id="theme"><option value="system">Según el dispositivo</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></article>
+      </section>
+      <section id="data" class="view" hidden aria-labelledby="data-title">
+        <p class="eyebrow">EN ESTE DISPOSITIVO</p><h1 id="data-title">Importar y exportar</h1><p class="intro">Recupera tu copia o llévate tus datos. Todo se procesa localmente.</p>
+        <article class="panel"><h2>Copia de seguridad</h2><p>Incluye casos, imágenes revisadas, favoritos, agenda, estudios, pendientes y ajustes. Borrar los datos del navegador puede eliminarlos.</p>
+          <div class="actions"><button id="export-data" class="primary">Exportar datos</button><label class="file-button">Elegir archivo para importar<input id="import-data" type="file" accept="application/json,.json"></label></div>
+          <p class="field-help">Admite copias Turno y el formato anterior de NurseFlow, incluido nurseflow-backup-auto.json. Máximo 30 MB. Importar añade datos y conserva los registros existentes.</p>
+          <p id="storage-status" class="muted" role="status"></p>
+          <section id="import-preview" class="clinical-panel" hidden><h3>Resumen de importación</h3><div id="import-summary"></div><div class="actions"><button id="import-confirm" type="button" class="primary">Importar datos</button><button id="import-cancel" type="button" class="secondary">Cancelar importación</button></div></section>
+        </article>
+        <div id="backup-originals" class="list"></div>
+        <article class="panel"><h2>Conservar los datos</h2><p>No hay sincronización entre dispositivos. Comprueba que tus copias se descargan y guárdalas en un lugar privado.</p><button id="persist-data" class="secondary">Solicitar almacenamiento persistente</button></article>
+      </section>
+      <section id="agenda" class="view" hidden aria-labelledby="agenda-title">
+        <p class="eyebrow">TU SEMANA · OFFLINE</p><h1 id="agenda-title">Agenda</h1><p class="intro">Clases, turnos, prácticas y entregas. Un horario común para tu día a día.</p>
+        <div class="actions"><button id="plan-new" class="primary">+ Añadir horario</button><button id="agenda-export" class="secondary">Exportar calendario</button><a href="#studies">Mis estudios →</a><a href="#holidays">Festivos y días sin clase →</a></div>
+        <form id="plan-form" class="panel" hidden>
+          <h2>Horario</h2><input id="plan-id" type="hidden">
+          <div class="form-grid"><div><label for="plan-kind">Tipo</label><select id="plan-kind"><option>Clase</option><option value="rotation">Prácticas</option><option>Turno</option><option>Examen</option><option>Entrega</option><option>Tutoría</option><option>Otro</option></select></div><div><label for="plan-subject">Asignatura · opcional</label><select id="plan-subject"></select></div></div>
+          <label for="plan-title">Nombre</label><input id="plan-title" required maxlength="500" placeholder="Asignatura, Practicum o turno">
+          <div class="form-grid"><div><label for="plan-start-date">Desde</label><input id="plan-start-date" type="date" required></div><div><label for="plan-end-date">Hasta · si se repite</label><input id="plan-end-date" type="date"></div><div><label for="plan-start">Hora de inicio</label><input id="plan-start" type="time" required></div><div><label for="plan-end">Hora de fin</label><input id="plan-end" type="time" required></div></div>
+          <p class="field-help">Esta versión permite horarios que empiezan y terminan en el mismo día.</p>
+          <label class="confirmation-choice"><input id="plan-repeat" type="checkbox">Repetir durante el periodo</label>
+          <fieldset class="symptom-fieldset"><legend>Días de la semana</legend><div class="planner-weekdays">
+            <label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="1" checked>Lun</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="2" checked>Mar</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="3" checked>Mié</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="4" checked>Jue</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="5" checked>Vie</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="6">Sáb</label><label class="confirmation-choice"><input name="plan-weekday" type="checkbox" value="0">Dom</label>
+          </div></fieldset>
+          <p class="privacy-note">En prácticas proponemos 15:00–22:00 de lunes a viernes. Los festivos se excluyen automáticamente de las clases, pero no de prácticas o turnos: comprueba esos horarios con el centro.</p>
+          <label class="confirmation-choice"><input id="plan-ignore-closures" type="checkbox">Esta clase también se imparte en festivos o días sin clase</label><p class="field-help">Solo afecta al tipo Clase. Las fechas excluidas manualmente abajo se siguen respetando.</p>
+          <label for="plan-excluded">Días sin actividad · opcional</label><input id="plan-excluded" placeholder="2026-12-25, 2027-01-01" maxlength="2400"><p class="field-help">Fechas separadas por comas, en formato AAAA-MM-DD. Sirve para festivos y otras excepciones.</p>
+          <details><summary>Centro y tutor · opcional</summary><label for="plan-place">Centro o aula</label><input id="plan-place" maxlength="500"><label for="plan-tutor">Tutor o contacto de referencia</label><input id="plan-tutor" maxlength="500"></details>
+          <label class="confirmation-choice"><input id="plan-confirmed" type="checkbox">He comprobado los días, fechas y horario asignado</label>
+          <div class="actions"><button class="primary" type="submit">Guardar horario</button><button id="plan-cancel" class="secondary" type="button">Cancelar</button></div><p id="plan-status" role="status"></p>
+        </form>
+        <article class="panel"><div class="calendar-toolbar"><button id="agenda-prev" class="quiet" aria-label="Mes anterior">‹</button><h2 id="agenda-month-title"></h2><button id="agenda-next" class="quiet" aria-label="Mes siguiente">›</button></div><div id="agenda-month" class="calendar-grid" aria-label="Elegir un día"></div><button id="agenda-today" class="secondary">Hoy</button></article>
+        <h2 id="agenda-range"></h2><div id="agenda-days" class="list"></div>
+      </section>
+      <section id="holidays" class="view" hidden aria-labelledby="holidays-title">
+        <p class="eyebrow">VALENCIA · 2026 Y 2027</p><h1 id="holidays-title">Festivos y días sin clase</h1><p class="intro">Los festivos oficiales de Valencia ya están cargados. Las clases se omiten en esos días, sin borrar su horario recurrente.</p><p><a href="#agenda">Volver a la agenda →</a></p>
+        <article class="panel"><h2>Calendario de Valencia</h2><p>Incluye los festivos nacionales, autonómicos y locales publicados para 2026 y 2027. Se guardan en este dispositivo y en tus copias de seguridad. Las prácticas, turnos, exámenes y tutorías mantienen su horario.</p><p class="field-help">Desmarca una fecha para dejar de aplicarla a las clases. Esto no modifica las excepciones que ya hayas escrito dentro de un horario. Para otros años o localidades, añade fechas comprobadas; no se extrapolan festivos.</p><details><summary>Consultar y ajustar días sin clase</summary><div id="holiday-list"></div></details></article>
+        <article class="panel"><h2>Vacaciones y días propios de la UCV</h2><p class="field-help">Navidad, Pascua, Fallas o días del centro pueden abarcar más que los festivos oficiales. Comprueba las fechas de tu grado y campus en el <a href="https://www.ucv.es/Portals/0/documentos/calendario/2026/UCV%20CALENDARIO%20ACADEMICO%20A4%202026-27.pdf?ver=HS9USqNsSttDv3S2_xZ8gw%3D%3D" target="_blank" rel="noopener noreferrer">calendario académico UCV 2026–2027 ↗</a> y añade el periodo una sola vez para todas las clases.</p>
+          <form id="holiday-form"><label for="holiday-title">Nombre</label><input id="holiday-title" required maxlength="500" placeholder="Por ejemplo, vacaciones de Navidad"><div class="form-grid"><div><label for="holiday-from">Primer día sin clase</label><input id="holiday-from" type="date" required></div><div><label for="holiday-to">Último día sin clase · opcional</label><input id="holiday-to" type="date"></div></div><label for="holiday-source">Fuente · opcional</label><input id="holiday-source" type="url" maxlength="2000" placeholder="https://…"><div class="actions"><button type="submit" class="primary">Añadir días sin clase</button></div></form><p id="holiday-status" role="status" class="field-help"></p>
+        </article>
+      </section>
+      <section id="studies" class="view" hidden aria-labelledby="studies-title">
+        <p class="eyebrow">OPCIONAL · PARA ESTUDIAR</p><h1 id="studies-title">Mis estudios</h1><p class="intro">Tu matrícula real, aunque combines cursos o repitas asignaturas.</p><a href="#agenda">Ver agenda →</a>
+        <article class="panel"><h2>Asignaturas UCV</h2><p class="field-help">Selecciona tu plan según la matrícula. En 2026–2027 conviven el plan 2025 (primero y segundo) y el plan 2022 (tercero y cuarto). Se incluyen planes anteriores para quien los necesite.</p>
+          <div class="form-grid"><div><label for="study-year">Curso académico</label><select id="study-year"><option>2025-2026</option><option selected>2026-2027</option><option>2027-2028</option><option>2028-2029</option></select></div><div><label for="study-plan">Plan de estudios</label><select id="study-plan"><option value="2025">Plan 2025</option><option value="2022">Plan 2022</option><option value="2018">Plan 2018</option><option value="2010">Plan 2010</option></select></div><div><label for="study-course">Ver asignaturas de</label><select id="study-course"><option value="1">Primero</option><option value="2" selected>Segundo</option><option value="3">Tercero</option><option value="4">Cuarto</option></select></div></div>
+          <p><a id="study-source" target="_blank" rel="noopener noreferrer">Catálogo oficial UCV ↗</a></p><div id="study-subjects"></div>
+          <details open><summary>Mi matrícula de este año</summary><div id="study-enrolled"></div></details><p class="fine-print">Seleccionar asignaturas no añade horarios: dependen de tu grupo y matrícula. El catálogo es una copia consultable sin conexión.</p>
+        </article>
+        <div class="section-heading"><h2>Mis prácticas</h2><button id="rotation-new" class="primary">+ Añadir prácticas</button></div><div id="study-rotations" class="list"></div>
+        <p class="privacy-note">Las horas previstas no acreditan asistencia ni aprobación. La app es tu agenda personal: el registro oficial, firmas y evaluación se realizan en <a href="https://www.uevalua.es/" target="_blank" rel="noopener noreferrer">UCV Evalúa ↗</a>. No hay conexión con tu cuenta universitaria.</p>
+        <article class="panel"><h2>Pendientes de prácticas</h2><p class="field-help">Añade lo que te pida tu centro. Puedes cargar una lista inicial y quitar lo que no corresponda.</p><button id="task-preset" class="secondary">Añadir lista inicial UCV</button><div id="study-tasks"></div>
+          <form id="task-form"><label for="task-title">Nuevo pendiente</label><input id="task-title" required maxlength="500" placeholder="Por ejemplo, confirmar la acogida"><label for="task-due">Fecha límite · opcional</label><input id="task-due" type="date"><div class="actions"><button type="submit" class="secondary">Añadir pendiente</button></div></form>
+        </article>
+      </section>
+      <p id="global-status" class="global-status" role="status"></p><p id="offline-ready" class="fine-print">Preparando disponibilidad sin conexión…</p>
+    </main>
+    <nav class="tabbar" aria-label="Navegación principal"><a href="#tools" aria-current="page"><svg><use href="#i-tools"/></svg><span>Herramientas</span></a><a href="#medications"><svg><use href="#i-med"/></svg><span>Medicamentos</span></a><a href="#cases"><svg><use href="#i-cases"/></svg><span>Casos</span></a><a href="#agenda"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 2v6m10-6v6M3 11h18M7 15h3m4 0h3"/></svg><span>Agenda</span></a><a href="#saved"><svg><use href="#i-saved"/></svg><span>Más</span></a></nav>
+  </div>
+  <noscript>Activa JavaScript para utilizar las herramientas y el almacenamiento local.</noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

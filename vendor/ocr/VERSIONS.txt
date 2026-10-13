@@ -1,0 +1,5 @@
+tesseract.js 6.0.1 (npm integrity verified)
+tesseract.js-core 6.0.0 (npm integrity verified)
+@tesseract.js-data/spa 1.0.0 / 4.0.0_best_int
+Language SHA256 40be52f97b5d4eb7460073dc1f94cd546b27150333c0bf854ed7e7132db6bceb
+All OCR assets served locally. No patient image is transmitted.
