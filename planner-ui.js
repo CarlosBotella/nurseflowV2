@@ -64,9 +64,9 @@ export function initPlanner({announce}) {
     const list=$('agenda-days');list.replaceChildren();const collision=conflicts(events(),focused,addDays(focused,6),closures());
     const upcoming=events().flatMap(row=>occurrences(row,focused,addDays(focused,6),closures())).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
     $('agenda-range').textContent=`Desde ${pretty(focused)} · próximos 7 días`;
-    for(let i=0;i<7;i++){const day=addDays(focused,i),closed=closuresOn(closures(),day);if(closed.length)list.append(el('p',`${pretty(day)} · ${closed.map(r=>r.title).join(' · ')} · Sin clase. Los NurseFlowV2s y prácticas se mantienen.`, 'privacy-note'));}
+    for(let i=0;i<7;i++){const day=addDays(focused,i),closed=closuresOn(closures(),day);if(closed.length)list.append(el('p',`${pretty(day)} · ${closed.map(r=>r.title).join(' · ')} · Sin clase. Los turnos y prácticas se mantienen.`, 'privacy-note'));}
     if(focused.slice(0,4)<'2026'||addDays(focused,6).slice(0,4)>'2027')list.append(el('p','Los festivos oficiales precargados cubren Valencia 2026 y 2027. Para otros años o localidades, añade los días comprobados en Festivos y días sin clase.','privacy-note'));
-    if(!upcoming.length)list.append(el('p','No hay eventos previstos en estos días. Añade clases, prácticas, NurseFlowV2s o entregas.','empty'));
+    if(!upcoming.length)list.append(el('p','No hay eventos previstos en estos días. Añade clases, prácticas, turnos o entregas.','empty'));
     for(const row of upcoming){const item=el('article',undefined,'list-item');item.append(el('h3',row.title),el('p',`${pretty(row.date)} · ${row.start}–${row.end} · ${row.confirmed?'Horario confirmado por ti':'Provisional: revisa días y fechas'}`),el('p',row.place||row.category));
       if(collision.has(row.id))item.append(el('p','Hay otro evento que se solapa en este intervalo de 7 días.','privacy-note'));
       item.append(button('Editar horario',()=>openEvent(row)),button('Archivar',async()=>{if(confirm('¿Archivar este horario? Las anotaciones de asistencia se conservan.'))await put({...row,archived:true});},'quiet'));
