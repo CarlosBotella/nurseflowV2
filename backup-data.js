@@ -1,4 +1,5 @@
 import { SUBJECTS } from './ucv-catalog.js';
+import { isCalendarColor } from './calendar-layout.js';
 import { validDay, minutes } from './planner-data.js';
 const collections=['settings','cases','tasks','days','schedule','exceptions','pae','meds','procedures','quiz','flashcards'];
 export const BACKUP_LABELS={settings:'Perfil y preferencias',cases:'Casos',tasks:'Pendientes',days:'Jornadas',schedule:'Horarios',exceptions:'Festivos y excepciones',pae:'Planes de cuidados',meds:'Medicamentos',procedures:'Procedimientos',quiz:'Preguntas de estudio',flashcards:'Tarjetas de estudio'};
@@ -51,6 +52,7 @@ export async function convertNurseFlow(value){
 }
 export function validSetting(row){
  if(!row||typeof row.key!=='string')throw new Error('Ajuste inválido.');
+ if(row.key==='subjectColors'&&row.value&&typeof row.value==='object'&&!Array.isArray(row.value)&&Object.keys(row.value).length<=1000&&Object.entries(row.value).every(([key,color])=>key.length<=600&&isCalendarColor(color)))return {key:row.key,value:Object.fromEntries(Object.entries(row.value))};
  if(row.key==='theme'&&['system','light','dark'].includes(row.value))return {key:row.key,value:row.value};
  if(row.key==='toolFavorites'&&Array.isArray(row.value)&&row.value.length<=1000&&row.value.every(v=>typeof v==='string'&&v.length<=150))return {key:row.key,value:[...new Set(row.value)]};
  if(row.key==='study-filters'&&row.value&&/^\d{4}-\d{4}$/.test(row.value.year||'')&&Number(row.value.year.slice(5))===Number(row.value.year.slice(0,4))+1&&['2025','2022','2018','2010'].includes(row.value.plan)&&['1','2','3','4'].includes(row.value.course))return {key:row.key,value:{year:row.value.year,plan:row.value.plan,course:row.value.course}};

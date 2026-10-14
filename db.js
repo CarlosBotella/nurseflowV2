@@ -132,6 +132,13 @@ export const getSetting = key => transaction('settings', 'readonly', store => st
 export const setSetting = (key, value) => transaction('settings', 'readwrite', store => store.put({ key, value }));
 export const listPlanner = () => transaction('planner', 'readonly', store => store.getAll());
 export const savePlanner = value => transaction('planner', 'readwrite', store => store.put(validPlanner(value)));
+export async function savePlannerGroup(input, peerIds=[]){
+  const row=validPlanner(input),db=await openDB();
+  return new Promise((resolve,reject)=>{const tx=db.transaction('planner','readwrite'),store=tx.objectStore('planner');store.put(row);
+    for(const id of peerIds.filter(id=>id!==row.id))store.get(id).onsuccess=event=>{const previous=event.target.result;if(previous)store.put(validPlanner({...previous,archived:true}));};
+    tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error||new Error('No se pudo guardar el horario completo.'));
+  });
+}
 export const deletePlanner = id => transaction('planner', 'readwrite', store => store.delete(id));
 export async function seedPlanner(input) {
   const rows=input.map(validPlanner),db=await openDB();
@@ -142,11 +149,30 @@ export async function seedPlanner(input) {
 }
 export const listImports = () => transaction('imports', 'readonly', store => store.getAll());
 
+/** Delete ALL data from all object stores. Use with extreme caution. */
+export async function resetDatabase() {
+  const db = await openDB();
+  const storeNames = ['cases', 'favorites', 'planner', 'settings', 'imports'];
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeNames, 'readwrite');
+    let completed = 0;
+    for (const name of storeNames) {
+      const request = tx.objectStore(name).clear();
+      request.onsuccess = () => {
+        completed++;
+        if (completed === storeNames.length) resolve();
+      };
+      request.onerror = () => reject(request.error);
+    }
+    tx.onabort = () => reject(tx.error || new Error('No se pudo borrar la base de datos.'));
+  });
+}
+
 export async function exportBackup() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(['cases', 'favorites', 'planner', 'settings', 'imports'], 'readonly');
-    const result = { format: 'NurseFlowV2-backup', version: 3, exportedAt: new Date().toISOString() };
+    const result = { format: 'NurseFlowV2-backup', version: 4, exportedAt: new Date().toISOString() };
     for (const name of ['cases', 'favorites', 'planner', 'settings', 'imports']) tx.objectStore(name).getAll().onsuccess = event => { result[name] = event.target.result; };
     tx.oncomplete = () => resolve(result);
     tx.onabort = () => reject(tx.error);
@@ -157,7 +183,7 @@ export async function exportBackup() {
 export async function prepareImport(input) {
   const nurseFlow = isNurseFlow(input);
   const backup = nurseFlow ? await convertNurseFlow(input) : input;
-  if (!backup || backup.format !== 'NurseFlowV2-backup' || ![1,2,3].includes(backup.version) || !Array.isArray(backup.cases) || !Array.isArray(backup.favorites) || backup.cases.length > 5000 || backup.favorites.length > 5000 || (backup.version>=2 && (!Array.isArray(backup.planner) || backup.planner.length>20000)) || (backup.version===3 && (!Array.isArray(backup.settings) || backup.settings.length>100 || !Array.isArray(backup.imports) || backup.imports.length>100))) throw new Error('Copia incompatible o demasiado grande.');
+  if (!backup || !['turno-backup','NurseFlowV2-backup'].includes(backup.format) || ![1,2,3,4].includes(backup.version) || !Array.isArray(backup.cases) || !Array.isArray(backup.favorites) || backup.cases.length > 5000 || backup.favorites.length > 5000 || (backup.version>=2 && (!Array.isArray(backup.planner) || backup.planner.length>20000)) || (backup.version>=3 && (!Array.isArray(backup.settings) || backup.settings.length>100 || !Array.isArray(backup.imports) || backup.imports.length>100))) throw new Error('Copia incompatible o demasiado grande.');
   const cases = backup.cases.map(validCase);
   const favorites = backup.favorites.map(validFavorite);
   const planner = (backup.planner || []).map(validPlanner);
@@ -165,7 +191,7 @@ export async function prepareImport(input) {
   const imports = (backup.imports || []).map(validArchive);
   if (cases.some(row => !row.id)) throw new Error('Identificador vacío.');
   for (const [rows,key] of [[cases,'id'],[favorites,'nregistro'],[planner,'id'],[settings,'key'],[imports,'id']]) if (new Set(rows.map(row=>row[key])).size!==rows.length) throw new Error('La copia contiene identificadores duplicados.');
-  return {format:'NurseFlowV2-backup',version:3,cases,favorites,planner,settings,imports,report:nurseFlow ? backup.report : {source:'Copia NurseFlowV2',warnings:[],kept:[]}};
+  return {format:'NurseFlowV2-backup',version:4,cases,favorites,planner,settings,imports,report:nurseFlow ? backup.report : {source:'Copia NurseFlowV2',warnings:[],kept:[]}};
 }
 export async function importBackup(input) {
   const {cases,favorites,planner,settings,imports} = await prepareImport(input);

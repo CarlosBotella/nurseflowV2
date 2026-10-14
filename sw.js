@@ -1,10 +1,10 @@
-const VERSION = 'v18';
+const VERSION = 'v25';
 const SHELL = `NurseFlowV2-shell-${VERSION}`;
 const API = `NurseFlowV2-cima-${VERSION}`;
 const OCR = 'NurseFlowV2-ocr-assets-v1';
 const PREFIX = 'NurseFlowV2-';
 const BASE = new URL('./', self.location.href);
-const FILES = ['index.html','manifest.json','styles.css','app.js','db.js','backup-ui.js','backup-data.js','planner-ui.js','holidays-ui.js','holidays-valencia.json','planner-data.js','ucv-catalog.js','calculators.js','clinical-calculators.js','tool-catalog.js','tool-help.js','tools-ui.js','cima.js','api.js','icd.js','case-data.js','cases-ui.js','clinical-reference.js','ocr-ui.js','redaction.js','icons/icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png'];
+const FILES = ['index.html','manifest.json','styles.css','app.js','db.js','backup-ui.js','backup-data.js','calendar-layout.js','calendar-ui.js','color-picker.js','planner-ui.js','holidays-ui.js','holidays-valencia.json','planner-data.js','ucv-catalog.js','calculators.js','clinical-calculators.js','tool-catalog.js','tool-help.js','tools-ui.js','cima.js','api.js','icd.js','case-data.js','cases-ui.js','clinical-reference.js','ocr-ui.js','redaction.js','icons/icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png'];
 const SHELL_URLS = new Set(FILES.map(file => new URL(file, BASE).href));
 const API_LIMIT = 60;
 

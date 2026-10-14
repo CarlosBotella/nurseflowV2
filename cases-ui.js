@@ -161,11 +161,12 @@ export function initCases({ announce, setDirty, isDirty }) {
       actions.append(action('Abrir / editar', () => openCase(row)), action('Eliminar', async () => {
         if (!confirm(`¿Eliminar «${row.title}» de este dispositivo?`)) return;
         await db.deleteCase(row.id);
-        if ($('case-id').value === row.id) { imageEditor.reset(); invalidate(); resetClinical(); setDirty(false); $('case-form').hidden = true; }
+        if ($('case-id').value === row.id) { imageEditor.reset(); invalidate(); resetClinical(); setDirty(false); showEditor(false); }
         await renderCases(); announce('Caso eliminado.');
       }, 'danger')); item.append(actions); $('case-list').append(item);
     }
   }
+  function showEditor(open){$('case-form').hidden=!open;for(const id of ['case-list-heading','case-query','case-list'])$(id).hidden=open;}
   function openCase(row = {}) {
     if (isDirty() && !confirm('Hay cambios sin guardar. ¿Descartarlos?')) return;
     invalidate(); imageEditor.reset(); images = [...(row.images || [])]; paintImages();
@@ -181,7 +182,7 @@ export function initCases({ announce, setDirty, isDirty }) {
     else if (diagnosis) loadClinical();
     $('case-extra').open = Boolean(row.context || row.assessment || row.tags?.length);
     $('case-form-title').textContent = row.id ? 'Editar caso' : 'Nuevo caso';
-    $('case-form').hidden = false; $('case-status').textContent = ''; setDirty(false); $('case-title').focus();
+    showEditor(true); $('case-diagnosis-section').open=Boolean(row.diagnosis||row.symptoms?.length); $('case-image-section').open=Boolean(row.images?.length); $('case-reference-section').open=false; $('case-status').textContent = ''; setDirty(false); $('case-title').focus();
   }
   $('new-case').addEventListener('click', () => openCase());
   $('case-query').addEventListener('input', () => renderCases().catch(error => announce(error.message)));
@@ -197,15 +198,15 @@ export function initCases({ announce, setDirty, isDirty }) {
   };
   $('symptom-add').addEventListener('click', () => { try { addSymptom(); } catch (error) { announce(error.message); } });
   $('symptom-custom').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); try { addSymptom(); } catch (error) { announce(error.message); } } });
-  $('cancel-case').addEventListener('click', () => { if (!isDirty() || confirm('¿Descartar los cambios sin guardar?')) { imageEditor.reset(); invalidate(); clinicalGeneration++; clinicalController?.abort(); setDirty(false); $('case-form').hidden = true; } });
+  $('cancel-case').addEventListener('click', () => { if (!isDirty() || confirm('¿Descartar los cambios sin guardar?')) { imageEditor.reset(); invalidate(); clinicalGeneration++; clinicalController?.abort(); setDirty(false); showEditor(false); } });
   $('case-form').addEventListener('submit', async event => {
-    event.preventDefault(); const submit = event.target.querySelector('[type="submit"]'); submit.disabled = true;
+    event.preventDefault(); const submit = event.target.querySelector('[type="submit"]'); if(submit.disabled)return; submit.disabled = true;
     try {
       if (imageEditor.pending()) throw new Error('Adjunta la imagen revisada o descártala antes de guardar el caso.');
       addSymptom();
       const input = { images, clinicalReference, title: $('case-title').value, symptoms, diagnosis, diagnosisStatus: diagnosis && $('diagnosis-confirmed').checked ? 'confirmed' : 'unconfirmed', tags: $('case-tags').value.split(',').map(tag => tag.trim()).filter(Boolean), context: $('case-context').value, assessment: $('case-assessment').value, learning: $('case-learning').value };
       const row = $('case-id').value ? await db.updateCase($('case-id').value, input) : await db.createCase(input);
-      $('case-id').value = row.id; setDirty(false); $('case-status').textContent = 'Guardado en este dispositivo'; await renderCases();
+      imageEditor.reset(); invalidate(); clinicalGeneration++; clinicalController?.abort(); setDirty(false); showEditor(false); $('case-query').value=''; $('case-id').value=''; await renderCases(); announce('Caso guardado en este dispositivo.'); $('new-case').focus();
     } catch (error) { $('case-status').textContent = error.message; }
     finally { submit.disabled = false; }
   });

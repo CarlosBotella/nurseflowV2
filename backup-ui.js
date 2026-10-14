@@ -1,8 +1,10 @@
 import * as db from './db.js';
+import { resetDatabase } from './db.js';
 import { BACKUP_LABELS } from './backup-data.js';
 const $=id=>document.getElementById(id);
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 function download(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const link=el('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
+function localDate(){const p=Object.fromEntries(new Intl.DateTimeFormat('es-ES',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));return `${p.year}-${p.month}-${p.day}`;}
 export function initBackup({announce,onImported}){
  let pending=null,busy=false,selection=0;
  const status=message=>{$('storage-status').textContent=message;};
@@ -13,7 +15,7 @@ export function initBackup({announce,onImported}){
    const button=el('button','Descargar original conservado','secondary');button.type='button';button.addEventListener('click',()=>download(source,'nurseflow-original-conservado.json'));item.append(button);list.append(item);
   }
  }
- $('export-data').addEventListener('click',async()=>{if(busy)return;busy=true;$('export-data').disabled=true;try{download(await db.exportBackup(),`NurseFlowV2-copia-${new Date().toISOString().slice(0,10)}.json`);status('Copia preparada: casos, agenda, matrícula, pendientes, favoritos, ajustes y originales conservados. Comprueba que se haya descargado.');}catch(error){fail(error);}finally{busy=false;$('export-data').disabled=false;}});
+ $('export-data').addEventListener('click',async()=>{if(busy)return;busy=true;$('export-data').disabled=true;try{download(await db.exportBackup(),`NurseFlowV2-copia-${localDate()}.json`);status('Copia preparada: casos, agenda, matrícula, pendientes, favoritos, ajustes y originales conservados. Comprueba que se haya descargado.');}catch(error){fail(error);}finally{busy=false;$('export-data').disabled=false;}});
  $('import-data').addEventListener('change',async event=>{
   const file=event.target.files[0],version=++selection;pending=null;$('import-preview').hidden=true;$('import-summary').replaceChildren();
   try{if(!file)return;if(file.size>30*1024*1024)throw new Error('Máximo 30 MB por copia.');status('Revisando copia…');let data;try{data=JSON.parse((await file.text()).replace(/^\uFEFF/,''));}catch{throw new Error('El archivo no contiene JSON válido. Selecciona una exportación .json.');}
@@ -32,5 +34,11 @@ export function initBackup({announce,onImported}){
   catch(error){fail(error);}finally{busy=false;$('import-confirm').disabled=false;$('import-cancel').disabled=false;$('import-data').disabled=false;}
  });
  $('import-cancel').addEventListener('click',()=>{pending=null;selection++;$('import-preview').hidden=true;status('Importación cancelada. No se ha modificado ningún dato.');});
+	$('wipe-data').addEventListener('click',async()=>{
+	  if(!confirm('Peligro Irreversible\n\n¿Borrar TODOS los datos locales permanentemente? Esto no se puede deshacer.')) return;
+	  if(!confirm('Confirmación final: se eliminarán casos, agenda, favoritos, ajustes y originales conservados. ¿Continuar?')) return;
+	  await resetDatabase();
+	  location.reload();
+	});
  refresh().catch(fail);return {refresh};
 }
