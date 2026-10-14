@@ -4,7 +4,7 @@
  */
 
 // Subir VERSION en cada despliegue para renovar la caché de la aplicación.
-const VERSION = 'v26';
+const VERSION = 'v27';
 const SHELL = `NurseFlowV2-shell-${VERSION}`;
 const API = `NurseFlowV2-cima-${VERSION}`;
 const OCR = 'NurseFlowV2-ocr-assets-v1';

@@ -20,6 +20,61 @@ export function minutes(time) {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time || '')) throw new Error('Hora inválida.');
   return Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
 }
+/** Duración en minutos de una franja; si la hora final es anterior, termina al día siguiente. */
+export function shiftMinutes(start, end) {
+  const length = (minutes(end) - minutes(start) + 1440) % 1440;
+  if (!length) throw new Error('La hora final debe ser distinta de la inicial.');
+  return length;
+}
+// Código de día libre en los ciclos de turnos.
+export const REST = 'L';
+/** Divide una secuencia como «M M T T N N L L L L» o «MMTTNNLLLL» en códigos de turno. */
+export function parseSequence(value) {
+  const text = String(value || '')
+    .toUpperCase()
+    .trim();
+  if (!text) return [];
+  return /[\s,;·]/.test(text) ? text.split(/[\s,;·]+/).filter(Boolean) : [...text];
+}
+/**
+ * Valida un ciclo de turnos rotatorios: secuencia de 2–56 días (códigos de 1–3 letras o cifras,
+ * «L» = libre) y el horario de cada código de trabajo. Rechaza turnos consecutivos solapados.
+ */
+export function validPattern(input) {
+  if (
+    !input ||
+    !Array.isArray(input.sequence) ||
+    input.sequence.length < 2 ||
+    input.sequence.length > 56
+  )
+    throw new Error('El ciclo debe tener entre 2 y 56 días.');
+  const sequence = input.sequence.map(code => {
+    if (typeof code !== 'string' || !/^[A-Z0-9]{1,3}$/.test(code))
+      throw new Error('Usa letras o cifras (máximo 3) para cada día del ciclo.');
+    return code;
+  });
+  const shifts = {};
+  for (const code of new Set(sequence)) {
+    if (code === REST) continue;
+    const shift = input.shifts?.[code];
+    if (!shift) throw new Error(`Falta el horario del turno ${code}.`);
+    shiftMinutes(shift.start, shift.end);
+    shifts[code] = { start: shift.start, end: shift.end };
+  }
+  if (!Object.keys(shifts).length) throw new Error('El ciclo necesita al menos un día de trabajo.');
+  // Un turno de noche no puede terminar después de que empiece el del día siguiente.
+  sequence.forEach((code, i) => {
+    const current = shifts[code],
+      next = shifts[sequence[(i + 1) % sequence.length]];
+    if (
+      current &&
+      next &&
+      minutes(current.start) + shiftMinutes(current.start, current.end) > 1440 + minutes(next.start)
+    )
+      throw new Error(`El turno ${code} se solapa con el turno del día siguiente.`);
+  });
+  return { sequence, shifts };
+}
 /**
  * Valida y normaliza un registro de agenda según su tipo: closure (día sin clase),
  * enrollment (matrícula), event/rotation (horario), day (jornada) o task (pendiente).
@@ -76,14 +131,18 @@ export function validPlanner(value) {
       endDate = validDay(value.endDate || value.startDate);
     if (endDate < startDate || (Date.parse(endDate) - Date.parse(startDate)) / 86400000 > 550)
       throw new Error('El periodo debe durar como máximo 550 días y finalizar después de empezar.');
-    const slots = value.slots === undefined ? null : validSlots(value.slots);
-    const startTime = value.start || slots?.[0].start,
-      endTime = value.end || slots?.[0].end;
-    const start = minutes(startTime),
-      end = minutes(endTime);
-    if (end <= start)
-      throw new Error('La hora final debe ser posterior a la inicial (eventos del mismo día).');
-    const weekdays = slots ? [...new Set(slots.map(s => s.day))] : value.weekdays;
+    // Un ciclo de turnos sustituye a las franjas semanales.
+    const pattern = value.pattern ? validPattern(value.pattern) : null;
+    const slots = pattern || value.slots === undefined ? null : validSlots(value.slots);
+    const first = pattern && pattern.shifts[pattern.sequence.find(code => code !== REST)];
+    const startTime = first?.start || value.start || slots?.[0].start,
+      endTime = first?.end || value.end || slots?.[0].end;
+    shiftMinutes(startTime, endTime);
+    const weekdays = pattern
+      ? [0, 1, 2, 3, 4, 5, 6]
+      : slots
+        ? [...new Set(slots.map(s => s.day))]
+        : value.weekdays;
     if (
       !Array.isArray(weekdays) ||
       !weekdays.length ||
@@ -103,6 +162,7 @@ export function validPlanner(value) {
       end: endTime,
       weekdays: [...new Set(weekdays)],
       ...(slots ? { slots } : {}),
+      ...(pattern ? { pattern } : {}),
       excluded: [...new Set(excluded)],
       confirmed: Boolean(value.confirmed),
       archived: Boolean(value.archived),
@@ -151,15 +211,14 @@ export function addDays(value, delta) {
 export function closuresOn(closures, day) {
   return closures.filter(row => row.active !== false && row.startDate <= day && row.endDate >= day);
 }
-/** Valida las franjas semanales (de 1 a 28 y sin solapes en el mismo día). */
+/** Valida las franjas semanales (de 1 a 28 y sin solapes, incluidas las que cruzan la medianoche). */
 export function validSlots(input) {
   if (!Array.isArray(input) || !input.length || input.length > 28)
     throw new Error('Añade entre una y 28 franjas semanales.');
   const slots = input.map((row, index) => {
     if (!Number.isInteger(row.day) || row.day < 0 || row.day > 6)
       throw new Error('Día de franja inválido.');
-    if (minutes(row.end) <= minutes(row.start))
-      throw new Error('La franja debe terminar después de empezar.');
+    shiftMinutes(row.start, row.end);
     return {
       id: txt(row.id || `slot-${index}`, 100),
       day: row.day,
@@ -169,10 +228,21 @@ export function validSlots(input) {
   });
   if (new Set(slots.map(s => s.id)).size !== slots.length)
     throw new Error('Las franjas tienen identificadores duplicados.');
+  // Intervalos en minutos de la semana; se comparan también desplazados una semana (domingo → lunes).
+  const week = 7 * 1440,
+    span = s => {
+      const from = s.day * 1440 + minutes(s.start);
+      return [from, from + shiftMinutes(s.start, s.end)];
+    };
   for (const [i, a] of slots.entries())
-    for (const b of slots.slice(i + 1))
-      if (a.day === b.day && minutes(a.start) < minutes(b.end) && minutes(b.start) < minutes(a.end))
-        throw new Error('Hay franjas de esta asignatura que se solapan en el mismo día.');
+    for (const b of slots.slice(i + 1)) {
+      const [a0, a1] = span(a);
+      for (const offset of [-week, 0, week]) {
+        const [b0, b1] = span(b).map(n => n + offset);
+        if (a0 < b1 && b0 < a1)
+          throw new Error('Hay franjas de este horario que se solapan entre sí.');
+      }
+    }
   return slots;
 }
 /** Franjas de un evento; en registros antiguos sin slots se derivan de weekdays/start/end. */
@@ -181,38 +251,94 @@ export function eventSlots(event) {
     ? event.slots
     : event.weekdays.map(day => ({ id: 'legacy-' + day, day, start: event.start, end: event.end }));
 }
+/** Resumen legible del horario: franjas semanales o ciclo de turnos. */
+export function scheduleSummary(event) {
+  if (event.pattern)
+    return (
+      'Ciclo ' +
+      event.pattern.sequence.join(' ') +
+      ' · ' +
+      Object.entries(event.pattern.shifts)
+        .map(([code, s]) => `${code} ${s.start}–${s.end}`)
+        .join(' · ')
+    );
+  return eventSlots(event)
+    .map(
+      s =>
+        ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][s.day] +
+        ' ' +
+        s.start +
+        '–' +
+        s.end +
+        (minutes(s.end) < minutes(s.start) ? ' (+1 día)' : '')
+    )
+    .join(' · ');
+}
+// Días transcurridos entre dos fechas AAAA-MM-DD.
+const daysBetween = (from, to) => Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
 /**
- * Genera las ocurrencias de un evento entre dos fechas.
+ * Genera las ocurrencias de un evento entre dos fechas (según su día de inicio).
  * Omite los días excluidos y, en las clases, los días sin clase (salvo ignoreClosures).
+ * Cada ocurrencia indica overnight y endDay cuando termina al día siguiente.
  */
 export function occurrences(event, from = event.startDate, to = event.endDate, closures = []) {
   const rows = [];
   let day = from > event.startDate ? from : event.startDate;
   const last = to < event.endDate ? to : event.endDate;
-  const slots = eventSlots(event);
+  const slots = event.pattern ? [] : eventSlots(event);
+  const push = (date, start, end, slotId, extra = {}) => {
+    const overnight = minutes(end) <= minutes(start);
+    rows.push({
+      ...event,
+      ...extra,
+      date,
+      start,
+      end,
+      slotId,
+      overnight,
+      endDay: overnight ? addDays(date, 1) : date
+    });
+  };
   for (let count = 0; day <= last && count < 551; count++, day = addDays(day, 1)) {
     if (
       event.excluded.includes(day) ||
       (event.category === 'Clase' && !event.ignoreClosures && closuresOn(closures, day).length)
     )
       continue;
+    // Ciclo de turnos: el día de inicio corresponde a la primera posición de la secuencia.
+    if (event.pattern) {
+      const { sequence, shifts } = event.pattern,
+        code = sequence[daysBetween(event.startDate, day) % sequence.length];
+      if (shifts[code])
+        push(day, shifts[code].start, shifts[code].end, 'cycle-' + code, { shift: code });
+      continue;
+    }
     for (const slot of slots)
       if (slot.day === new Date(day + 'T12:00:00Z').getUTCDay())
-        rows.push({ ...event, date: day, start: slot.start, end: slot.end, slotId: slot.id });
+        push(day, slot.start, slot.end, slot.id);
   }
   return rows;
 }
+/** Duración en minutos de una ocurrencia. */
+export const occurrenceMinutes = row => shiftMinutes(row.start, row.end);
+/** Indica si dos ocurrencias se solapan en el tiempo, aunque crucen la medianoche. */
+export function overlaps(a, b) {
+  const span = row => {
+    const from = daysBetween('2000-01-01', row.date) * 1440 + minutes(row.start);
+    return [from, from + occurrenceMinutes(row)];
+  };
+  const [a0, a1] = span(a),
+    [b0, b1] = span(b);
+  return a0 < b1 && b0 < a1;
+}
 /** Identificadores de los eventos con ocurrencias solapadas en el intervalo. */
 export function conflicts(events, from, to, closures = []) {
-  const rows = events.flatMap(event => occurrences(event, from, to, closures));
+  // Incluye el día anterior para detectar los turnos de noche que llegan al intervalo.
+  const rows = events.flatMap(event => occurrences(event, addDays(from, -1), to, closures));
   const ids = new Set();
   rows.forEach((a, i) =>
     rows.slice(i + 1).forEach(b => {
-      if (
-        a.date === b.date &&
-        minutes(a.start) < minutes(b.end) &&
-        minutes(b.start) < minutes(a.end)
-      ) {
+      if (overlaps(a, b) && (a.date >= from || b.date >= from)) {
         ids.add(a.id);
         ids.add(b.id);
       }
@@ -272,8 +398,8 @@ export function calendarFile(events, closures = []) {
           .replace(/[-:]/g, '')
           .replace(/\.\d{3}/, '')}`,
         `DTSTART:${utcTime(row.date, row.start)}`,
-        `DTEND:${utcTime(row.date, row.end)}`,
-        `SUMMARY:${escape(event.title + (event.confirmed ? '' : ' (provisional)'))}`,
+        `DTEND:${utcTime(row.endDay, row.end)}`,
+        `SUMMARY:${escape(event.title + (row.shift ? ' · ' + row.shift : '') + (event.confirmed ? '' : ' (provisional)'))}`,
         `LOCATION:${escape(event.place)}`,
         'END:VEVENT'
       );

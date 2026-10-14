@@ -87,6 +87,13 @@
         ><span id="connection" class="badge">Comprobando conexión</span>
       </header>
       <main id="main" tabindex="-1">
+        <aside
+          id="backup-reminder"
+          class="panel backup-reminder"
+          role="status"
+          aria-label="Recordatorio de copia de seguridad"
+          hidden
+        ></aside>
         <!-- Vista: Herramientas (calculadoras clínicas) -->
         <section id="tools" class="view" aria-labelledby="tools-title">
           <p class="eyebrow">CONSULTA · EN TU BOLSILLO</p>
@@ -186,6 +193,7 @@
           <h1 id="cases-title">Casos y notas</h1>
           <p class="intro">Tu cuaderno clínico, guardado en este dispositivo.</p>
           <p><a href="#data">Importar o exportar datos →</a></p>
+          <div id="case-draft" class="panel draft-panel" role="status" hidden></div>
           <div id="case-list-heading" class="section-heading">
             <h2>Tu cuaderno</h2>
             <button id="new-case" class="primary">+ Nuevo caso</button>
@@ -439,6 +447,7 @@
               nurseflow-backup-auto.json. Máximo 30 MB. Importar añade datos y conserva los
               registros existentes.
             </p>
+            <p id="backup-last" class="muted"></p>
             <p id="storage-status" class="muted" role="status"></p>
             <section id="import-preview" class="clinical-panel" hidden>
               <h3>Resumen de importación</h3>
@@ -528,7 +537,11 @@
               ><input id="plan-repeat" type="checkbox" />Repetir cada semana durante el
               periodo</label
             >
-            <fieldset class="symptom-fieldset">
+            <label class="confirmation-choice"
+              ><input id="plan-cycle" type="checkbox" />Turnos rotatorios: repetir un ciclo de
+              días (p. ej. M M T T N N L L L L)</label
+            >
+            <fieldset id="plan-slots-fields" class="symptom-fieldset">
               <legend>Días y horas</legend>
               <p class="field-help">
                 Una misma asignatura puede tener varias franjas: lunes de 08:00 a 10:00, miércoles
@@ -539,9 +552,25 @@
                 + Añadir otra franja
               </button>
             </fieldset>
+            <fieldset id="plan-cycle-fields" class="symptom-fieldset" hidden>
+              <legend>Ciclo de turnos</legend>
+              <label for="plan-cycle-sequence">Secuencia del ciclo</label
+              ><input
+                id="plan-cycle-sequence"
+                maxlength="300"
+                autocapitalize="characters"
+                placeholder="M M T T N N L L L L"
+                aria-describedby="plan-cycle-help"
+              />
+              <p id="plan-cycle-help" class="field-help">
+                Un código por día, separados por espacios, empezando en la fecha «Desde». L = libre.
+                El ciclo se repite hasta la fecha final. Indica abajo el horario de cada turno.
+              </p>
+              <div id="plan-cycle-shifts"></div>
+            </fieldset>
             <p class="field-help">
-              El color se comparte con los demás horarios de la misma asignatura. Los horarios
-              empiezan y terminan en el mismo día.
+              El color se comparte con los demás horarios de la misma asignatura. Si la hora final
+              es anterior a la inicial (p. ej. 22:00–08:00), el turno termina al día siguiente.
             </p>
             <p class="privacy-note">
               En prácticas proponemos 15:00–22:00 de lunes a viernes. Los festivos se excluyen

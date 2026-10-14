@@ -5,7 +5,8 @@ import {
   eventColor,
   colorKey,
   visibleDays,
-  layoutDay
+  layoutDay,
+  daySegments
 } from './calendar-layout.js';
 const $ = id => document.getElementById(id);
 const el = (tag, text, cls) => {
@@ -138,7 +139,9 @@ export function paintCalendar({ events, closures, focused, month, colors, onSele
   const hours = el('div', undefined, 'timeline-hours');
   for (let h = 0; h < 24; h++) hours.append(el('span', String(h).padStart(2, '0') + ':00'));
   body.append(hours);
-  const rows = events.flatMap(r => occurrences(r, days[0], days.at(-1), closures));
+  // Se incluye el día anterior para pintar la parte final de los turnos de noche.
+  const rows = events.flatMap(r => occurrences(r, addDays(days[0], -1), days.at(-1), closures));
+  const segments = [];
   for (const day of days) {
     const col = el(
       'div',
@@ -146,18 +149,24 @@ export function paintCalendar({ events, closures, focused, month, colors, onSele
       'timeline-column' + (day === focused ? ' selected-column' : '')
     );
     col.setAttribute('aria-label', pretty(day));
-    for (const row of layoutDay(rows.filter(r => r.date === day))) {
+    const daily = daySegments(rows, day);
+    segments.push(...daily);
+    for (const row of layoutDay(daily)) {
       const b = el('button', undefined, 'timeline-event event-color-' + eventColor(row, colors));
       applyEventColor(b, row, colors);
       b.type = 'button';
-      b.append(el('strong', row.title), el('span', row.start + '–' + row.end));
-      b.setAttribute('aria-label', `${row.title}, ${pretty(day)}, ${row.start} a ${row.end}`);
+      const label = (row.shift ? row.shift + ' · ' : '') + row.from + '–' + row.to;
+      b.append(el('strong', row.title), el('span', (row.continued ? '… ' : '') + label));
+      b.setAttribute(
+        'aria-label',
+        `${row.title}, ${pretty(row.source.date)}, ${row.from} a ${row.to}${row.overnight ? ' del día siguiente' : ''}`
+      );
       // 0,8 px por minuto; el ancho se reparte entre los carriles solapados.
       b.style.top = mins(row.start) * 0.8 + 'px';
       b.style.height = Math.max(22, (mins(row.end) - mins(row.start)) * 0.8) + 'px';
       b.style.left = `calc(${(100 * row.lane) / row.laneCount}% + 3px)`;
       b.style.width = `calc(${100 / row.laneCount}% - 6px)`;
-      b.addEventListener('click', () => onEvent(row));
+      b.addEventListener('click', () => onEvent(row.source));
       col.append(b);
     }
     body.append(col);
@@ -165,12 +174,15 @@ export function paintCalendar({ events, closures, focused, month, colors, onSele
   scroller.append(body);
   root.append(scroller);
   scroller.dataset.initialized = String(root.getBoundingClientRect().height > 0);
-  // Desplazamiento inicial: el primer evento o, como máximo, las 8:00.
+  // Desplazamiento inicial: el primer tramo visible o, como máximo, las 8:00.
   scroller.scrollTop =
     scroll ??
     Math.max(
       0,
-      Math.min(8 * 48, rows.length ? Math.min(...rows.map(r => mins(r.start))) * 0.8 : 8 * 48) - 16
+      Math.min(
+        8 * 48,
+        segments.length ? Math.min(...segments.map(r => mins(r.start))) * 0.8 : 8 * 48
+      ) - 16
     );
-  return { days, rows };
+  return { days, rows: segments };
 }

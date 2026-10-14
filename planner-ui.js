@@ -8,7 +8,12 @@ import {
   addDays,
   calendarFile,
   minutes,
-  closuresOn
+  closuresOn,
+  overlaps,
+  occurrenceMinutes,
+  scheduleSummary,
+  parseSequence,
+  REST
 } from './planner-data.js';
 import { initHolidays } from './holidays-ui.js';
 import { applyEventColor, eventColor, colorKey, visibleDays } from './calendar-layout.js';
@@ -162,6 +167,13 @@ export function initPlanner({ announce }) {
       l.append(input);
       return l;
     };
+    const hint = el('span', undefined, 'field-help slot-overnight');
+    const updateHint = () => {
+      hint.textContent = overnightHint(start.value, end.value);
+    };
+    start.addEventListener('input', updateHint);
+    end.addEventListener('input', updateHint);
+    updateHint();
     item.append(
       label('Día', day),
       label('Desde', start),
@@ -173,10 +185,92 @@ export function initPlanner({ announce }) {
           dirty = true;
         },
         'quiet'
-      )
+      ),
+      hint
     );
     $('plan-slots').append(item);
     toggleRepeat();
+  }
+  /** Aviso de franja que termina al día siguiente (p. ej. un turno de noche 22:00–08:00). */
+  function overnightHint(start, end) {
+    if (!start || !end) return '';
+    if (start === end) return 'La hora final debe ser distinta de la inicial.';
+    return minutes(end) < minutes(start) ? 'Termina al día siguiente.' : '';
+  }
+  // Horarios propuestos para los códigos habituales de un ciclo de turnos.
+  const CYCLE_DEFAULTS = {
+    M: ['08:00', '15:00'],
+    T: ['15:00', '22:00'],
+    N: ['22:00', '08:00'],
+    D: ['08:00', '20:00'],
+    N12: ['20:00', '08:00']
+  };
+  /** Pinta una fila de horario por cada código de trabajo de la secuencia, conservando lo escrito. */
+  function paintCycleShifts(shifts) {
+    const current = shifts || readCycleShifts();
+    const container = $('plan-cycle-shifts');
+    container.replaceChildren();
+    const codes = [...new Set(parseSequence($('plan-cycle-sequence').value))].filter(
+      code => code !== REST
+    );
+    if (!codes.length)
+      container.append(
+        el('p', 'Escribe la secuencia para indicar el horario de cada turno.', 'field-help')
+      );
+    for (const code of codes) {
+      const [startValue, endValue] = current[code]
+        ? [current[code].start, current[code].end]
+        : CYCLE_DEFAULTS[code] || ['08:00', '15:00'];
+      const item = el('div', undefined, 'schedule-slot cycle-shift');
+      item.dataset.code = code;
+      const start = document.createElement('input');
+      start.type = 'time';
+      start.required = true;
+      start.value = startValue;
+      start.className = 'slot-start';
+      const end = document.createElement('input');
+      end.type = 'time';
+      end.required = true;
+      end.value = endValue;
+      end.className = 'slot-end';
+      const hint = el('span', overnightHint(startValue, endValue), 'field-help slot-overnight');
+      const update = () => {
+        hint.textContent = overnightHint(start.value, end.value);
+      };
+      start.addEventListener('input', update);
+      end.addEventListener('input', update);
+      const from = el('label', 'Desde'),
+        to = el('label', 'Hasta');
+      from.append(start);
+      to.append(end);
+      item.append(el('strong', 'Turno ' + code, 'cycle-code'), from, to, hint);
+      container.append(item);
+    }
+  }
+  /** Horarios de los códigos escritos en el formulario del ciclo. */
+  function readCycleShifts() {
+    return Object.fromEntries(
+      [...$('plan-cycle-shifts').querySelectorAll('.cycle-shift')].map(item => [
+        item.dataset.code,
+        {
+          start: item.querySelector('.slot-start').value,
+          end: item.querySelector('.slot-end').value
+        }
+      ])
+    );
+  }
+  /** Muestra las franjas semanales o el ciclo de turnos según la opción elegida. */
+  function toggleCycle() {
+    const cycle = $('plan-cycle').checked;
+    $('plan-cycle-fields').hidden = !cycle;
+    $('plan-slots-fields').hidden = cycle;
+    $('plan-cycle-sequence').required = cycle;
+    if (cycle) {
+      $('plan-repeat').checked = true;
+      toggleRepeat();
+      paintCycleShifts();
+    }
+    $('plan-repeat').disabled = cycle;
   }
   /** Sin repetición, las franjas se fijan al día de la semana de la fecha de inicio. */
   function toggleRepeat() {
@@ -216,10 +310,11 @@ export function initPlanner({ announce }) {
     const row = input ? rows.find(r => r.id === input.id) || input : null;
     // Las clases de una misma asignatura con los mismos datos se editan juntas como un grupo.
     const group =
-      row?.category === 'Clase'
+      row?.category === 'Clase' && !row.pattern
         ? events().filter(
             r =>
               r.category === 'Clase' &&
+              !r.pattern &&
               colorKey(r) === colorKey(row) &&
               ['startDate', 'endDate', 'place', 'tutor', 'confirmed', 'ignoreClosures'].every(
                 key => r[key] === row[key]
@@ -251,7 +346,11 @@ export function initPlanner({ announce }) {
     $('plan-confirmed').checked = Boolean(row?.confirmed);
     $('plan-ignore-closures').checked = Boolean(row?.ignoreClosures);
     $('plan-slots').replaceChildren();
-    if (row) {
+    $('plan-cycle').checked = Boolean(row?.pattern);
+    $('plan-cycle-sequence').value = row?.pattern?.sequence.join(' ') || '';
+    paintCycleShifts(row?.pattern?.shifts || {});
+    if (row?.pattern) addSlot();
+    else if (row) {
       const seen = new Set();
       for (const slot of group.flatMap(eventSlots)) {
         const key = slot.day + '/' + slot.start + '/' + slot.end;
@@ -265,6 +364,7 @@ export function initPlanner({ announce }) {
         addSlot({ id: crypto.randomUUID(), day, start: '15:00', end: '22:00' })
       );
     else addSlot();
+    toggleCycle();
     colorEdited = false;
     const existingColor = row ? colors[colorKey(row)] : undefined;
     renderColorPicker(
@@ -321,17 +421,25 @@ export function initPlanner({ announce }) {
           'privacy-note'
         )
       );
+    // Incluye los turnos de noche que empezaron el día anterior y terminan hoy.
+    const sortKey = r => (r.date < focused ? '' : r.start);
     const daily = events()
-      .flatMap(r => occurrences(r, focused, focused, closures()))
-      .sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title));
-    const chosen = daily.find(r => r.id === selected?.id && r.slotId === selected.slotId);
+      .flatMap(r => occurrences(r, addDays(focused, -1), focused, closures()))
+      .filter(r => r.date === focused || r.endDay === focused)
+      .sort((a, b) => sortKey(a).localeCompare(sortKey(b)) || a.title.localeCompare(b.title));
+    const chosen = daily.find(
+      r => r.id === selected?.id && r.slotId === selected.slotId && r.date === selected.date
+    );
     if (!chosen && daily.length) {
       const choices = el('div', undefined, 'actions');
       for (const r of daily)
         choices.append(
           applyEventColor(
             button(
-              r.start + ' · ' + r.title,
+              (r.date < focused ? 'Hasta ' + r.end : r.start) +
+                ' · ' +
+                r.title +
+                (r.shift ? ' · ' + r.shift : ''),
               () => {
                 selected = { id: r.id, date: r.date, slotId: r.slotId };
                 paintAgenda();
@@ -355,7 +463,7 @@ export function initPlanner({ announce }) {
         r.startDate <= focused &&
         r.endDate >= focused &&
         r.excluded.includes(focused) &&
-        eventSlots(r).some(s => s.day === new Date(focused + 'T12:00:00Z').getUTCDay())
+        occurrences({ ...r, excluded: [] }, focused, focused).length
     )) {
       const item = el('article', undefined, 'list-item cancelled-event');
       item.append(
@@ -381,21 +489,18 @@ export function initPlanner({ announce }) {
       el('h3', row.title),
       el(
         'p',
-        `${pretty(row.date)} · ${row.start}–${row.end} · ${row.confirmed ? 'Confirmado por ti' : 'Horario provisional'}`
+        `${pretty(row.date)} · ${row.shift ? 'Turno ' + row.shift + ' · ' : ''}${row.start}–${row.end}${row.overnight ? ' (termina el ' + pretty(row.endDay) + ')' : ''} · ${row.confirmed ? 'Confirmado por ti' : 'Horario provisional'}`
       )
     );
     if (row.place) item.append(el('p', row.place));
-    const overlaps = events()
-      .flatMap(r => occurrences(r, row.date, row.date, closures()))
+    const coinciding = events()
+      .flatMap(r => occurrences(r, addDays(row.date, -1), row.endDay, closures()))
       .filter(
-        r =>
-          (r.id !== row.id || r.slotId !== row.slotId) &&
-          minutes(r.start) < minutes(row.end) &&
-          minutes(row.start) < minutes(r.end)
+        r => (r.id !== row.id || r.slotId !== row.slotId || r.date !== row.date) && overlaps(r, row)
       );
-    if (overlaps.length)
+    if (coinciding.length)
       item.append(
-        el('p', 'Coincide con: ' + overlaps.map(r => r.title).join(', '), 'privacy-note')
+        el('p', 'Coincide con: ' + coinciding.map(r => r.title).join(', '), 'privacy-note')
       );
     item.append(
       button('Editar horario completo', () => openEvent(parent)),
@@ -558,25 +663,12 @@ export function initPlanner({ announce }) {
     list.replaceChildren();
     for (const row of rows.filter(r => r.type === 'rotation')) {
       const logs = rows.filter(r => r.type === 'day' && r.eventId === row.id);
-      const planned =
-        occurrences(row).reduce((sum, r) => sum + minutes(r.end) - minutes(r.start), 0) / 60;
+      const planned = occurrences(row).reduce((sum, r) => sum + occurrenceMinutes(r), 0) / 60;
       const actual = logs.reduce((sum, r) => sum + r.actualMinutes, 0) / 60;
       const item = el('article', undefined, 'list-item');
       item.append(
         el('h3', row.title + (row.archived ? ' · Archivada' : '')),
-        el(
-          'p',
-          `${row.startDate} → ${row.endDate} · ${eventSlots(row)
-            .map(
-              s =>
-                ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][s.day] +
-                ' ' +
-                s.start +
-                '–' +
-                s.end
-            )
-            .join(' · ')}`
-        ),
+        el('p', `${row.startDate} → ${row.endDate} · ${scheduleSummary(row)}`),
         el(
           'p',
           `${planned} h previstas · ${actual} h anotadas como realizadas · ${logs.filter(r => r.registered).length} jornadas marcadas como registradas`
@@ -668,6 +760,8 @@ export function initPlanner({ announce }) {
   });
   $('plan-title').addEventListener('input', updateColor);
   $('plan-repeat').addEventListener('change', toggleRepeat);
+  $('plan-cycle').addEventListener('change', toggleCycle);
+  $('plan-cycle-sequence').addEventListener('input', () => paintCycleShifts());
   $('plan-start-date').addEventListener('change', toggleRepeat);
   $('plan-add-slot').addEventListener('click', () => {
     const last = $('plan-slots').lastElementChild;
@@ -699,17 +793,27 @@ export function initPlanner({ announce }) {
     submit.disabled = true;
     run(async () => {
       try {
-        const repeat = $('plan-repeat').checked,
+        const cycle = $('plan-cycle').checked,
+          repeat = cycle || $('plan-repeat').checked,
           rotation = $('plan-kind').value === 'rotation',
           startDate = $('plan-start-date').value,
           day = new Date(startDate + 'T12:00:00Z').getUTCDay();
-        const slots = [...$('plan-slots').children].map(item => ({
-          id: item.dataset.slotId,
-          day: repeat ? Number(item.querySelector('.slot-day').value) : day,
-          start: item.querySelector('.slot-start').value,
-          end: item.querySelector('.slot-end').value
-        }));
+        const slots = cycle
+          ? undefined
+          : [...$('plan-slots').children].map(item => ({
+              id: item.dataset.slotId,
+              day: repeat ? Number(item.querySelector('.slot-day').value) : day,
+              start: item.querySelector('.slot-start').value,
+              end: item.querySelector('.slot-end').value
+            }));
+        const pattern = cycle
+          ? {
+              sequence: parseSequence($('plan-cycle-sequence').value),
+              shifts: readCycleShifts()
+            }
+          : undefined;
         const value = validPlanner({
+          pattern,
           id: $('plan-id').value || crypto.randomUUID(),
           type: rotation ? 'rotation' : 'event',
           category: rotation ? 'Prácticas' : $('plan-kind').value,

@@ -24,7 +24,7 @@ const schedule = patch =>
   });
 test('native Turno and NurseFlowV2 versions stay importable after renaming', async () => {
   for (const format of ['turno-backup', 'NurseFlowV2-backup'])
-    for (const version of [1, 2, 3, 4]) {
+    for (const version of [1, 2, 3, 4, 5]) {
       const copy = await prepareImport({
         format,
         version,
