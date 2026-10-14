@@ -316,6 +316,21 @@ svg {
   margin: 24px 0;
   box-shadow: var(--shadow);
 }
+.backup-reminder,
+.draft-panel {
+  padding: 16px 18px;
+  margin: 16px 0;
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+}
+.backup-reminder p,
+.draft-panel p {
+  margin: 0 0 10px;
+}
+.draft-panel h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
 .panel .section-heading {
   margin-top: 0;
 }
@@ -1553,6 +1568,20 @@ summary {
 .schedule-slot:last-child {
   margin-bottom: 14px;
 }
+.schedule-slot .slot-overnight {
+  grid-column: 1/-1;
+  margin: 0;
+}
+.schedule-slot .slot-overnight:empty {
+  display: none;
+}
+.cycle-shift {
+  grid-template-columns: auto 1fr 1fr;
+}
+.cycle-code {
+  align-self: center;
+  min-width: 4.5em;
+}
 #case-form > details {
   padding: 15px 0;
 }
@@ -1606,8 +1635,12 @@ summary {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .schedule-slot label:first-child {
+  .schedule-slot label:first-child,
+  .cycle-shift .cycle-code {
     grid-column: 1/-1;
+  }
+  .cycle-shift label:first-child {
+    grid-column: auto;
   }
   .schedule-slot button {
     grid-column: 1/-1;

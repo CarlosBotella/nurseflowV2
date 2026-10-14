@@ -34,6 +34,9 @@ function localDate() {
   );
   return `${p.year}-${p.month}-${p.day}`;
 }
+// Días sin exportar antes de mostrar el recordatorio y días que lo pospone «Más tarde».
+const REMIND_DAYS = 14,
+  SNOOZE_DAYS = 3;
 /** Conecta los controles de copia de seguridad. Devuelve { refresh }. */
 export function initBackup({ announce, onImported }) {
   // pending: copia validada pendiente de confirmar; selection descarta lecturas obsoletas.
@@ -75,23 +78,85 @@ export function initBackup({ announce, onImported }) {
       list.append(item);
     }
   }
-  // Exportar copia.
-  $('export-data').addEventListener('click', async () => {
+  /**
+   * Muestra la fecha de la última copia y, si hay datos propios y han pasado REMIND_DAYS días
+   * (o nunca se exportó), el aviso para exportar. «Más tarde» lo pospone SNOOZE_DAYS días.
+   */
+  async function checkReminder() {
+    const [last, snoozed, cases, favorites, planner] = await Promise.all([
+      db.getSetting('lastBackupAt'),
+      db.getSetting('backupSnoozedUntil'),
+      db.listCases(),
+      db.listFavorites(),
+      db.listPlanner()
+    ]);
+    const own =
+      cases.length +
+      favorites.length +
+      planner.filter(row => row.type !== 'closure' || row.customized).length;
+    const lastAt = Date.parse(last?.value || ''),
+      days = Number.isFinite(lastAt) ? Math.floor((Date.now() - lastAt) / 86400000) : null;
+    const ago = days === null ? '' : days === 0 ? 'hoy' : days === 1 ? 'ayer' : `hace ${days} días`;
+    $('backup-last').textContent =
+      days === null
+        ? 'Aún no has exportado ninguna copia desde este dispositivo.'
+        : `Última copia exportada ${ago} (${new Date(lastAt).toLocaleDateString('es-ES')}).`;
+    const box = $('backup-reminder');
+    box.replaceChildren();
+    box.hidden = !(
+      own &&
+      (days === null || days >= REMIND_DAYS) &&
+      !(Date.parse(snoozed?.value || '') > Date.now())
+    );
+    if (box.hidden) return;
+    const later = el('button', 'Más tarde', 'quiet'),
+      now = el('button', 'Exportar ahora', 'primary');
+    later.type = now.type = 'button';
+    later.addEventListener('click', () =>
+      db
+        .setSetting(
+          'backupSnoozedUntil',
+          new Date(Date.now() + SNOOZE_DAYS * 86400000).toISOString()
+        )
+        .then(checkReminder)
+        .catch(fail)
+    );
+    now.addEventListener('click', exportNow);
+    const actions = el('div', undefined, 'actions');
+    actions.append(now, later);
+    box.append(
+      el(
+        'p',
+        (days === null
+          ? 'Todavía no has exportado ninguna copia de seguridad.'
+          : `Tu última copia de seguridad es de ${ago}.`) +
+          ' Tus datos solo están en este dispositivo y el navegador puede borrarlos.'
+      ),
+      actions
+    );
+  }
+  /** Descarga la copia y registra la fecha para el recordatorio. */
+  async function exportNow() {
     if (busy) return;
     busy = true;
     $('export-data').disabled = true;
     try {
       download(await db.exportBackup(), `NurseFlowV2-copia-${localDate()}.json`);
+      await db.setSetting('lastBackupAt', new Date().toISOString());
       status(
         'Copia preparada: casos, agenda, matrícula, pendientes, favoritos, ajustes y originales conservados. Comprueba que se haya descargado.'
       );
+      announce('Copia de seguridad preparada. Comprueba que se haya descargado.');
+      await checkReminder();
     } catch (error) {
       fail(error);
     } finally {
       busy = false;
       $('export-data').disabled = false;
     }
-  });
+  }
+  // Exportar copia.
+  $('export-data').addEventListener('click', exportNow);
   // Selección de archivo: valida y muestra un resumen sin guardar nada todavía.
   $('import-data').addEventListener('change', async event => {
     const file = event.target.files[0],
@@ -173,6 +238,7 @@ export function initBackup({ announce, onImported }) {
       $('import-preview').hidden = true;
       await onImported();
       await refresh();
+      await checkReminder();
       status(
         count
           ? `${count} registros añadidos. Los existentes se han conservado.`
@@ -209,9 +275,14 @@ export function initBackup({ announce, onImported }) {
       )
     )
       return;
+    // Evita que el autoguardado del borrador vuelva a escribir datos durante la recarga.
+    window.dispatchEvent(new CustomEvent('data-wiped'));
     await resetDatabase();
     location.reload();
   });
   refresh().catch(fail);
-  return { refresh };
+  checkReminder().catch(fail);
+  return {
+    refresh: () => Promise.all([refresh(), checkReminder()])
+  };
 }

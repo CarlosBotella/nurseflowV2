@@ -26,11 +26,96 @@ export function initCases({ announce, setDirty, isDirty }) {
     controller,
     debounce,
     listGeneration = 0;
-  // Marca el caso con cambios sin guardar.
+  // Borrador guardado en IndexedDB (sobrevive al cierre de la app) y temporizador de autoguardado.
+  let draft = null,
+    draftTimer,
+    wiped = false;
+  window.addEventListener('data-wiped', () => {
+    wiped = true;
+    clearTimeout(draftTimer);
+  });
+  // Marca el caso con cambios sin guardar y programa el autoguardado del borrador.
   const markDirty = () => {
     setDirty(true);
     $('case-status').textContent = 'Cambios sin guardar';
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 1500);
   };
+  /** Datos del formulario en el formato de createCase/updateCase. */
+  function collectInput() {
+    return {
+      images,
+      clinicalReference,
+      title: $('case-title').value,
+      symptoms,
+      diagnosis,
+      diagnosisStatus: diagnosis && $('diagnosis-confirmed').checked ? 'confirmed' : 'unconfirmed',
+      tags: $('case-tags')
+        .value.split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean),
+      context: $('case-context').value,
+      assessment: $('case-assessment').value,
+      learning: $('case-learning').value
+    };
+  }
+  /** Guarda el borrador del caso abierto si tiene cambios; un fallo no interrumpe la edición. */
+  async function saveDraft() {
+    clearTimeout(draftTimer);
+    if (wiped || !isDirty() || $('case-form').hidden) return;
+    draft = { caseId: $('case-id').value, savedAt: new Date().toISOString(), input: collectInput() };
+    try {
+      await db.setSetting('caseDraft', draft);
+      $('case-status').textContent = 'Cambios sin guardar · borrador guardado en el dispositivo';
+    } catch {
+      $('case-status').textContent = 'Cambios sin guardar · no se pudo guardar el borrador';
+    }
+  }
+  /** Elimina el borrador al guardar o descartar el caso. */
+  async function clearDraft() {
+    clearTimeout(draftTimer);
+    draft = null;
+    paintDraft();
+    await db.deleteSetting('caseDraft').catch(() => {});
+  }
+  /** Aviso para recuperar o descartar un borrador pendiente. */
+  function paintDraft() {
+    const box = $('case-draft');
+    box.replaceChildren();
+    box.hidden = !draft || !$('case-form').hidden;
+    if (box.hidden) return;
+    const actions = el('div', undefined, 'actions');
+    actions.append(
+      action('Recuperar borrador', restoreDraft, 'primary'),
+      action(
+        'Descartar',
+        async () => {
+          if (confirm('¿Descartar el borrador? No se puede recuperar.')) await clearDraft();
+        },
+        'quiet'
+      )
+    );
+    box.append(
+      el('h2', 'Borrador sin guardar'),
+      el(
+        'p',
+        `«${draft.input.title.trim() || 'Caso sin título'}»${draft.caseId ? ' (cambios en un caso existente)' : ''} · ${new Date(draft.savedAt).toLocaleString('es-ES')}`
+      ),
+      actions
+    );
+  }
+  /** Abre el editor con el borrador; si su caso ya no existe, se recupera como caso nuevo. */
+  async function restoreDraft() {
+    const saved = draft.caseId ? await db.getCase(draft.caseId) : null;
+    if (draft.caseId && !saved) announce('El caso original ya no existe: se recupera como nuevo.');
+    openCase({ ...(saved || {}), ...draft.input, id: saved?.id || '' }, true);
+    markDirty();
+  }
+  // En iOS la app puede cerrarse sin beforeunload: se guarda al pasar a segundo plano.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveDraft();
+  });
+  window.addEventListener('pagehide', () => saveDraft());
   // Botón cuyos errores se muestran en el aviso global.
   const action = (label, callback, cls = 'secondary') => {
     const node = el('button', label, cls);
@@ -431,6 +516,7 @@ export function initCases({ announce, setDirty, isDirty }) {
           async () => {
             if (!confirm(`¿Eliminar «${row.title}» de este dispositivo?`)) return;
             await db.deleteCase(row.id);
+            if (draft?.caseId === row.id) await clearDraft();
             if ($('case-id').value === row.id) {
               imageEditor.reset();
               invalidate();
@@ -452,10 +538,19 @@ export function initCases({ announce, setDirty, isDirty }) {
   function showEditor(open) {
     $('case-form').hidden = !open;
     for (const id of ['case-list-heading', 'case-query', 'case-list']) $(id).hidden = open;
+    paintDraft();
   }
   /** Abre un caso (o uno nuevo) en el editor, avisando si hay cambios sin guardar. */
-  function openCase(row = {}) {
+  function openCase(row = {}, restoring = false) {
     if (isDirty() && !confirm('Hay cambios sin guardar. ¿Descartarlos?')) return;
+    if (
+      !restoring &&
+      !isDirty() &&
+      draft &&
+      !confirm('Tienes un borrador sin guardar. Si continúas, se descartará. ¿Continuar?')
+    )
+      return;
+    if (!restoring && draft) clearDraft();
     invalidate();
     imageEditor.reset();
     images = [...(row.images || [])];
@@ -553,6 +648,7 @@ export function initCases({ announce, setDirty, isDirty }) {
       clinicalGeneration++;
       clinicalController?.abort();
       setDirty(false);
+      clearDraft();
       showEditor(false);
     }
   });
@@ -566,30 +662,15 @@ export function initCases({ announce, setDirty, isDirty }) {
       if (imageEditor.pending())
         throw new Error('Adjunta la imagen revisada o descártala antes de guardar el caso.');
       addSymptom();
-      const input = {
-        images,
-        clinicalReference,
-        title: $('case-title').value,
-        symptoms,
-        diagnosis,
-        diagnosisStatus:
-          diagnosis && $('diagnosis-confirmed').checked ? 'confirmed' : 'unconfirmed',
-        tags: $('case-tags')
-          .value.split(',')
-          .map(tag => tag.trim())
-          .filter(Boolean),
-        context: $('case-context').value,
-        assessment: $('case-assessment').value,
-        learning: $('case-learning').value
-      };
-      const row = $('case-id').value
-        ? await db.updateCase($('case-id').value, input)
-        : await db.createCase(input);
+      const input = collectInput();
+      if ($('case-id').value) await db.updateCase($('case-id').value, input);
+      else await db.createCase(input);
       imageEditor.reset();
       invalidate();
       clinicalGeneration++;
       clinicalController?.abort();
       setDirty(false);
+      await clearDraft();
       showEditor(false);
       $('case-query').value = '';
       $('case-id').value = '';
@@ -602,5 +683,14 @@ export function initCases({ announce, setDirty, isDirty }) {
       submit.disabled = false;
     }
   });
+  // Carga el borrador pendiente de una sesión anterior.
+  db.getSetting('caseDraft')
+    .then(saved => {
+      if (saved?.value?.input) {
+        draft = saved.value;
+        paintDraft();
+      }
+    })
+    .catch(() => {});
   return { renderCases };
 }

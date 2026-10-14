@@ -181,3 +181,17 @@ Comprobación: 43 pruebas automatizadas (36 de esta carpeta y 7 nuevas), sintaxi
 ### Selector de colores de la agenda
 
 La paleta ofrece ocho colores con marca de selección, nombres en español y objetivos táctiles de 44 px. La opción Personalizado abre el selector nativo del navegador. El color se comparte entre los horarios de la asignatura, se guarda localmente y se incluye en las copias de seguridad. Los colores personalizados admiten únicamente valores hexadecimales de seis dígitos. Se conserva compatibilidad con la exportación COLORS del calendario y el valor oculto del formulario permanece fuera del contenedor que se redibuja. App shell v25 incluye color-picker.js para uso offline.
+
+## 0.9: Turnos de noche, turnos rotatorios, borradores y recordatorio de copia
+
+Turnos que cruzan la medianoche: si la hora final es anterior a la inicial (p. ej. 22:00–08:00), la franja termina al día siguiente. La línea de tiempo la divide en dos tramos (hasta las 24:00 y desde las 00:00 del día siguiente), la lista del día muestra «Hasta 08:00» en el día de salida, las horas previstas cuentan la duración real, los solapes se detectan entre días (también domingo → lunes) e ICS exporta DTEND en la fecha siguiente. Una hora final igual a la inicial sigue sin admitirse.
+
+Turnos rotatorios: en el formulario de horario, «Turnos rotatorios» permite escribir un ciclo (p. ej. `M M T T N N L L L L` o `MMTTNNLLLL`) que empieza en la fecha «Desde» y se repite hasta la fecha final. L = libre; cada código de trabajo (1–3 letras o cifras) tiene su horario, con valores propuestos para M, T, N, D y N12. Se rechazan ciclos con turnos consecutivos solapados. Cancelar un día no desplaza el ciclo. Sirve también para prácticas que siguen el turno del tutor.
+
+Borradores de casos: mientras se edita un caso, el formulario se guarda en IndexedDB cada 1,5 s y al pasar la app a segundo plano (iOS no siempre avisa al cerrar). Al volver a Casos aparece «Borrador sin guardar» con Recuperar o Descartar. Se borra al guardar, cancelar o eliminar el caso. Una imagen sin adjuntar en el editor OCR no forma parte del borrador.
+
+Recordatorio de copia: si hay datos propios y nunca se ha exportado una copia o han pasado 14 días, aparece un aviso con «Exportar ahora» y «Más tarde» (3 días). Importar y exportar muestra la fecha de la última copia exportada. El borrador y las fechas del recordatorio son ajustes de este dispositivo: no se exportan ni se importan.
+
+Backup v5: necesario porque las versiones anteriores interpretarían mal los turnos de noche y los ciclos; una app antigua rechaza la copia en lugar de importarla mal. Se siguen importando v1–v4. IndexedDB sin cambios de esquema. Service Worker v27. Sin cambios del Worker.
+
+Verificación: 52 pruebas automatizadas (8 nuevas en `tests/shifts.test.mjs`). Prueba en Chrome a 390 px: turno 22:00–08:00 en dos tramos, ciclo M M T T N N L L L L sobre noviembre de 2026, borrador recuperado tras recargar, aviso visible sin copia previa y oculto después de exportar una copia v5 sin ajustes del dispositivo.

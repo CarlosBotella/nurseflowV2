@@ -84,6 +84,35 @@ export function visibleDays(selected, landscape) {
 }
 // Convierte 'HH:MM' en minutos desde medianoche.
 const mins = t => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+/**
+ * Tramos visibles de un día: una ocurrencia que cruza la medianoche se pinta hasta las 24:00 en su
+ * día y desde las 00:00 en el siguiente (continued). from/to conservan el horario real y source la ocurrencia.
+ */
+export function daySegments(rows, day) {
+  const out = [];
+  for (const row of rows) {
+    if (row.date === day)
+      out.push({
+        ...row,
+        start: row.start,
+        end: row.overnight ? '24:00' : row.end,
+        from: row.start,
+        to: row.end,
+        source: row
+      });
+    else if (row.overnight && row.endDay === day)
+      out.push({
+        ...row,
+        start: '00:00',
+        end: row.end,
+        from: row.start,
+        to: row.end,
+        continued: true,
+        source: row
+      });
+  }
+  return out;
+}
 /** Asigna carriles dentro de cada grupo de eventos solapados; las citas contiguas comparten carril. */
 export function layoutDay(events) {
   const ordered = events

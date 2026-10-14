@@ -10,6 +10,8 @@ import { isNurseFlow, convertNurseFlow, validSetting, validArchive } from './bac
 const NAME = 'NurseFlowV2-nursing';
 const VERSION = 3;
 let connection;
+// Ajustes propios de este dispositivo que no viajan en las copias (borrador de caso y recordatorio).
+export const DEVICE_SETTINGS = ['caseDraft', 'lastBackupAt', 'backupSnoozedUntil'];
 
 /** Abre (y migra si hace falta) la base de datos reutilizando una única conexión. */
 export function openDB() {
@@ -194,6 +196,8 @@ export const saveFavorite = value =>
 export const listFavorites = () => transaction('favorites', 'readonly', store => store.getAll());
 export const deleteFavorite = id =>
   transaction('favorites', 'readwrite', store => store.delete(id));
+export const deleteSetting = key =>
+  transaction('settings', 'readwrite', store => store.delete(key));
 export const getSetting = key => transaction('settings', 'readonly', store => store.get(key));
 export const setSetting = (key, value) =>
   transaction('settings', 'readwrite', store => store.put({ key, value }));
@@ -256,19 +260,25 @@ export async function resetDatabase() {
   });
 }
 
-/** Exporta todos los almacenes como copia (formato NurseFlowV2-backup v4). */
+/**
+ * Exporta todos los almacenes como copia (formato NurseFlowV2-backup v5), sin los ajustes del dispositivo.
+ * v5 admite turnos que terminan al día siguiente y ciclos de turnos; una app anterior la rechaza.
+ */
 export async function exportBackup() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(['cases', 'favorites', 'planner', 'settings', 'imports'], 'readonly');
     const result = {
       format: 'NurseFlowV2-backup',
-      version: 4,
+      version: 5,
       exportedAt: new Date().toISOString()
     };
     for (const name of ['cases', 'favorites', 'planner', 'settings', 'imports'])
       tx.objectStore(name).getAll().onsuccess = event => {
-        result[name] = event.target.result;
+        result[name] =
+          name === 'settings'
+            ? event.target.result.filter(row => !DEVICE_SETTINGS.includes(row.key))
+            : event.target.result;
       };
     tx.oncomplete = () => resolve(result);
     tx.onabort = () => reject(tx.error);
@@ -285,7 +295,7 @@ export async function prepareImport(input) {
   if (
     !backup ||
     !['turno-backup', 'NurseFlowV2-backup'].includes(backup.format) ||
-    ![1, 2, 3, 4].includes(backup.version) ||
+    ![1, 2, 3, 4, 5].includes(backup.version) ||
     !Array.isArray(backup.cases) ||
     !Array.isArray(backup.favorites) ||
     backup.cases.length > 5000 ||
@@ -301,7 +311,9 @@ export async function prepareImport(input) {
   const cases = backup.cases.map(validCase);
   const favorites = backup.favorites.map(validFavorite);
   const planner = (backup.planner || []).map(validPlanner);
-  const settings = (backup.settings || []).map(validSetting);
+  const settings = (backup.settings || [])
+    .filter(row => !DEVICE_SETTINGS.includes(row?.key))
+    .map(validSetting);
   const imports = (backup.imports || []).map(validArchive);
   if (cases.some(row => !row.id)) throw new Error('Identificador vacío.');
   for (const [rows, key] of [
@@ -315,7 +327,7 @@ export async function prepareImport(input) {
       throw new Error('La copia contiene identificadores duplicados.');
   return {
     format: 'NurseFlowV2-backup',
-    version: 4,
+    version: 5,
     cases,
     favorites,
     planner,
